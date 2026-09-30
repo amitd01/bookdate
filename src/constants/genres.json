@@ -1,0 +1,22 @@
+[
+  { "slug": "fantasy",            "label": "Fantasy",            "emoji": "🐉", "subject": "fantasy" },
+  { "slug": "science_fiction",    "label": "Sci‑Fi",             "emoji": "🚀", "subject": "science_fiction" },
+  { "slug": "romance",            "label": "Romance",            "emoji": "💘", "subject": "romance" },
+  { "slug": "mystery",            "label": "Mystery",            "emoji": "🔍", "subject": "mystery_and_detective_stories" },
+  { "slug": "thriller",           "label": "Thriller",           "emoji": "🔪", "subject": "thriller" },
+  { "slug": "horror",             "label": "Horror",             "emoji": "👻", "subject": "horror" },
+  { "slug": "historical_fiction", "label": "Historical Fiction", "emoji": "🏰", "subject": "historical_fiction" },
+  { "slug": "classics",           "label": "Classics",           "emoji": "🏛️", "subject": "classic_literature" },
+  { "slug": "literary_fiction",   "label": "Literary Fiction",   "emoji": "🖋️", "subject": "literary_fiction" },
+  { "slug": "young_adult",        "label": "Young Adult",        "emoji": "🌱", "subject": "young_adult_fiction" },
+  { "slug": "graphic_novels",     "label": "Graphic Novels",     "emoji": "💥", "subject": "graphic_novels" },
+  { "slug": "poetry",             "label": "Poetry",             "emoji": "🌙", "subject": "poetry" },
+  { "slug": "biography",          "label": "Biography",          "emoji": "👤", "subject": "biography" },
+  { "slug": "history",            "label": "History",            "emoji": "📜", "subject": "history" },
+  { "slug": "science",            "label": "Popular Science",    "emoji": "🔬", "subject": "popular_science" },
+  { "slug": "philosophy",         "label": "Philosophy",         "emoji": "🤔", "subject": "philosophy" },
+  { "slug": "self_help",          "label": "Self‑Help",          "emoji": "🌟", "subject": "self-help" },
+  { "slug": "business",           "label": "Business",           "emoji": "📈", "subject": "business" },
+  { "slug": "humor",              "label": "Humor",              "emoji": "😂", "subject": "humor" },
+  { "slug": "travel",             "label": "Travel",             "emoji": "🧭", "subject": "travel" }
+]

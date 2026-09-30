@@ -1,0 +1,17 @@
+# Supabase CLI config (https://supabase.com/docs/guides/local-development).
+# Only non-default settings are listed; run `supabase link` then `supabase db push`.
+project_id = "bookdate"
+
+[auth]
+site_url = "bookdate://"
+additional_redirect_urls = ["bookdate://"]
+
+[auth.email]
+enable_signup = true
+enable_confirmations = true
+
+# Native Sign in with Apple: the iOS bundle id must be listed as a client id.
+[auth.external.apple]
+enabled = true
+client_id = "com.amitdas.bookdate"
+secret = "env(SUPABASE_AUTH_EXTERNAL_APPLE_SECRET)"
