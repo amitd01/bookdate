@@ -80,8 +80,10 @@
     },
     "extra": {
       "eas": {
-        "projectId": ""
-      }
-    }
+        "projectId": "4e76330a-3b55-4e9c-8877-008da253ec62"
+      },
+      "router": {}
+    },
+    "owner": "amitd01"
   }
 }
