@@ -46,8 +46,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "expo lint",
     "seed:books": "node scripts/seed-books.mjs",
-    "build:ios": "eas build -p ios --profile production",
-    "submit:ios": "eas submit -p ios --latest"
+    "build:ios": "npx eas-cli@latest build -p ios --profile production",
+    "submit:ios": "npx eas-cli@latest submit -p ios --latest"
   },
   "private": true
 }
