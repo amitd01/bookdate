@@ -12,10 +12,18 @@ implemented in code; items marked **☐ you** need an action in Apple/Supabase/E
 - ☐ Sign in with Apple capability: EAS enables it automatically from `ios.usesAppleSignIn` when it creates the provisioning profile.
 - ☐ Push: on first `eas build`, answer **yes** to "Generate a new Apple Push Notifications service key" (or upload one with `eas credentials`).
 
-## 2. Host the legal pages
+## 2. Legal & support pages (GitHub Pages)
 
-- ☐ Publish `docs/privacy.md` and `docs/terms.md` (GitHub Pages, Notion, your site). Fill the placeholders (company name, contact, jurisdiction).
-- ☐ Set `EXPO_PUBLIC_PRIVACY_URL` / `EXPO_PUBLIC_TERMS_URL` / `EXPO_PUBLIC_SUPPORT_EMAIL` as EAS production env vars, and enter the same Privacy Policy URL + a Support URL in App Store Connect.
+`docs/` is published with GitHub Pages (repo **Settings → Pages → Deploy from a branch → `main` / `/docs`**):
+
+| Page | URL | Where it's used |
+|---|---|---|
+| Privacy Policy | https://amitd01.github.io/bookdate/privacy/ | App (default), App Store Connect → App Privacy |
+| Terms & Community Rules | https://amitd01.github.io/bookdate/terms/ | App (default), onboarding agreement |
+| Support | https://amitd01.github.io/bookdate/support/ | App Store Connect → Support URL |
+| Marketing | https://amitd01.github.io/bookdate/ | App Store Connect → Marketing URL (optional) |
+
+The app already defaults to these URLs and to `amitdas+bookdatesupport@gmail.com`; the `EXPO_PUBLIC_*` env vars only override them.
 
 ## 3. Demo account for the reviewer (guideline 2.1)
 

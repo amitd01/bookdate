@@ -64,7 +64,7 @@ src/constants/           theme tokens, genres.json (shared with seed script)
 supabase/migrations/     schema, RLS, RPCs, matching & push triggers, analytics views
 supabase/tests/          PostGIS scenario tests (run in CI)
 scripts/                 seed-books.mjs, seed-demo.mjs, make-icons.py
-docs/                    APP_STORE.md (submission guide), privacy.md, terms.md
+docs/                    APP_STORE.md (submission guide) + GitHub Pages site: privacy, terms, support
 ```
 
 ## Setup
@@ -113,7 +113,7 @@ Short version:
 # set production env vars once
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_SUPABASE_URL --value https://<ref>.supabase.co --visibility plaintext
 npx eas-cli env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON_KEY --value <anon key> --visibility plaintext
-# (+ EXPO_PUBLIC_POSTHOG_KEY, EXPO_PUBLIC_TERMS_URL, EXPO_PUBLIC_PRIVACY_URL)
+# (+ EXPO_PUBLIC_POSTHOG_KEY if using analytics; legal URLs default to the GitHub Pages site)
 
 npm run build:ios     # eas build -p ios --profile production  (EAS handles certificates & profiles)
 npm run submit:ios    # eas submit -p ios --latest  → TestFlight / App Store Connect
