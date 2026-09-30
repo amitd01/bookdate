@@ -1,34 +1,112 @@
+---
+title: Privacy Policy
+permalink: /privacy/
+---
+
 # BookDate Privacy Policy
 
-_Last updated: [DATE]_ · Operator: **[COMPANY / YOUR NAME]**, [ADDRESS] · Contact: **[support@bookdate.app]**
+**Effective date:** 30 September 2026
 
-BookDate helps adults (18+) meet nearby readers who like the same books. This policy explains what we collect and why.
+BookDate ("**BookDate**", "**we**", "**us**") is a mobile app that helps adults meet nearby people who love the same books. BookDate is operated by the developer named as the seller on BookDate's App Store listing, based in India. This policy explains what personal data we collect, why, who we share it with, and the choices and rights you have. It is written to meet India's **Digital Personal Data Protection Act, 2023 (DPDP Act)** and the **Information Technology Act, 2000** and its rules, and also the EU/UK **GDPR**, the California **CCPA/CPRA**, and similar laws that may apply to you.
 
-## What we collect
-- **Account data:** email address (or Apple private relay address) and an internal user ID.
-- **Profile data you provide:** first name, birthday (to verify you are 18+ and show your age), gender, who you'd like to meet, age range, favourite genres, optional bio.
-- **Approximate location:** while the app is open we read your device location, round it to about 100 m and store only that. It is used solely to find readers within 15 km. Your location is never shown to other users.
-- **Activity:** books you swipe on, your matches and messages, reports and blocks.
-- **Push token:** to send you match and message notifications (you can disable these in iOS Settings).
-- **Product analytics (if enabled):** in-app events such as "book swiped" or "message sent", linked to your user ID, to improve the app. We do not use advertising identifiers and do not track you across other apps or websites.
+**Contact / Grievance Officer:** [amitdas+bookdatesupport@gmail.com](mailto:amitdas+bookdatesupport@gmail.com)
 
-## How we use it
-To run the service (matching, chat, notifications), to keep users safe (moderating reports, enforcing our Terms), and to improve the product. We do not sell your data and do not show ads.
+---
 
-## Who can see what
-Matched readers see your first name, age, gender, bio and favourite genres, plus messages you send them. Nobody sees your email or location.
+## 1. Who can use BookDate
 
-## Service providers
-Supabase (database, authentication, hosting), Expo (push notification delivery), PostHog (product analytics, if enabled), Open Library (book covers — no personal data is shared).
+BookDate is for adults **18 years and older** only. We do not knowingly collect personal data from anyone under 18. If we learn that an account belongs to someone under 18, we delete it and its data.
 
-## Retention & deletion
-Your data is kept while your account is active. **Profile → Delete account** permanently deletes your account, profile, swipes, matches and messages immediately. Reports you filed may be retained for up to 12 months for safety purposes.
+## 2. Personal data we collect
 
-## Your rights
-You can access, correct (Profile → Edit) or delete your data at any time, and contact us for any privacy request. Depending on where you live (e.g. GDPR, DPDP Act, CCPA) you may have additional rights; we honour them.
+| Category | What | Source |
+|---|---|---|
+| **Account** | Email address (or an Apple "Hide My Email" relay address), internal user ID, sign-in method | You / Apple |
+| **Profile** | First name, date of birth (used to confirm you are 18+ and to show your age), gender, the genders and age range you'd like to meet, favourite genres, optional bio | You |
+| **Approximate location** | Your device location while the app is open, **rounded to about 100 metres** before it is stored | Your device, with your permission |
+| **Activity** | Books you swipe on (like/pass), your matches, messages you send and receive, blocks and reports | Your use of the app |
+| **Device & notifications** | Push-notification token, app version, device model and OS version | Your device |
+| **Product analytics** | In-app events (for example "book swiped", "message sent") linked to your user ID | Your use of the app |
 
-## Children
-BookDate is strictly for adults 18+. We delete any account we learn belongs to a minor.
+We **do not** collect photos, contacts, precise location history, payment information, or advertising identifiers (IDFA), and we do not track you across other companies' apps or websites.
 
-## Changes
-We will notify you in the app of material changes to this policy.
+Gender and dating preferences can be sensitive. We collect them only because you choose to provide them for matching, and only matched users see your gender.
+
+## 3. Why we use it (purposes and legal bases)
+
+| Purpose | Data used | Legal basis |
+|---|---|---|
+| Create and secure your account | Account | Consent (DPDP); contract (GDPR) |
+| Show you book covers and personalise your feed | Profile, activity | Consent; contract |
+| Match you with readers **within 15 km** who liked the same book and fit each other's preferences | Profile, approximate location, activity | Consent; contract |
+| Let matched readers chat, and send match/message notifications | Activity, push token | Consent; contract |
+| Keep the community safe: enforce our Terms, review reports, prevent fraud and abuse | All of the above as needed | Legitimate uses permitted by law; legitimate interests (GDPR) |
+| Understand and improve the app | Product analytics | Consent; legitimate interests (GDPR) |
+| Comply with law and respond to lawful requests | As required | Legal obligation |
+
+By creating an account and completing onboarding, you consent to these purposes. You can withdraw consent at any time by deleting your account (see section 7); withdrawal does not affect processing already done.
+
+## 4. What other users can see
+
+When you match with someone, they can see your **first name, age, gender, bio, favourite genres**, the book you both liked, and the messages you send them. **No one else** can see your profile. Other users **never** see your email address or your location — only that you are within 15 km.
+
+## 5. Who we share data with
+
+We do **not sell** or rent your personal data and we do not share it for advertising. We share it only with service providers (data processors) that run the app for us, under contracts that require them to protect it:
+
+- **Supabase** — database, authentication and hosting
+- **Expo (650 Industries)** — delivery of push notifications
+- **Apple** — Sign in with Apple and push notifications (APNs)
+- **PostHog** — product analytics
+
+We may also disclose data if required by law, a court order or a government authority, or to protect the safety of any person.
+
+Book covers are loaded from **Open Library** (Internet Archive); no personal data is sent to them beyond what any website receives when an image is requested (such as your IP address).
+
+## 6. International transfers
+
+Our service providers may store and process data outside India (for example in the United States or the European Union). Where required, we rely on appropriate safeguards such as standard contractual clauses, and we transfer data only to countries not restricted by the Government of India under the DPDP Act.
+
+## 7. How long we keep data
+
+- **While your account is active:** we keep your data to provide the service.
+- **When you delete your account** (Profile → Delete account): your account, profile, location, swipes, matches and messages are **deleted immediately** from our live database. Residual copies in encrypted backups are overwritten within 30 days.
+- **Safety records:** reports you filed or that were filed about you may be kept for up to 12 months to prevent abuse and meet legal obligations.
+- **Analytics** events are kept for up to 12 months.
+
+## 8. Your rights
+
+Depending on where you live, you have some or all of these rights:
+
+- **Access** — ask for a summary of your personal data and how it is used
+- **Correction and updating** — edit your profile any time in the app (Profile → Edit)
+- **Erasure** — delete your account and data in the app, or ask us to
+- **Withdraw consent** — at any time, by deleting your account or contacting us
+- **Grievance redressal** — raise a complaint with our Grievance Officer
+- **Nominate** a person to exercise your rights if you die or become incapacitated (DPDP Act)
+- **Object / restrict / portability** (GDPR) and **know / delete / opt out of sale** (CCPA — we do not sell data)
+
+To exercise any right, email [amitdas+bookdatesupport@gmail.com](mailto:amitdas+bookdatesupport@gmail.com) from the address linked to your account (or tell us your Apple relay address). We respond within **30 days**. We will not discriminate against you for exercising your rights.
+
+If you are not satisfied with our response, you may complain to the **Data Protection Board of India**, or to your local data-protection authority if you are in the EU/UK or elsewhere.
+
+## 9. Your choices
+
+- **Location:** allow or deny in iOS Settings → BookDate → Location. Matching needs location; without it you can still browse but won't match.
+- **Notifications:** turn off in iOS Settings → BookDate → Notifications.
+- **Block or report** anyone from the chat screen.
+
+## 10. Security
+
+Data is encrypted in transit (HTTPS/TLS) and at rest by our hosting provider. Access is restricted by database row-level security so each user can reach only their own data and their matches' public profile. No system is perfectly secure; if a personal-data breach affects you, we will notify you and the relevant authorities as the law requires.
+
+## 11. Grievance Officer
+
+In accordance with the Information Technology Act, 2000 and rules made under it, and the DPDP Act, 2023:
+
+**Grievance Officer, BookDate** — [amitdas+bookdatesupport@gmail.com](mailto:amitdas+bookdatesupport@gmail.com)
+We acknowledge complaints within 24 hours and resolve them within 15 days.
+
+## 12. Changes to this policy
+
+We may update this policy. If the changes are material, we will tell you in the app before they take effect. The effective date at the top shows when it was last changed.
