@@ -3,17 +3,26 @@
  *   session === null            -> signed out   (sign-in screen)
  *   session && profile === null -> needs onboarding
  *   session && profile          -> main app
- * Sign-in methods: Sign in with Apple (primary) and email/password
- * (used for the App Review demo account).
+ * Sign-in methods: Sign in with Apple (iOS), Google (iOS + Android, when
+ * configured) and email/password (also used for the App Review demo account).
  */
 import type { Session } from '@supabase/supabase-js';
+import { GoogleSignin, isSuccessResponse } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { Platform } from 'react-native';
 
 import { analytics } from './analytics';
 import { getMyProfile } from './api';
+import { config } from './config';
 import { supabase } from './supabase';
 import type { Profile } from './types';
+
+/** Google sign-in needs the web client ID everywhere, plus an iOS client ID on iOS. */
+export const googleEnabled = !!config.googleWebClientId && (Platform.OS !== 'ios' || !!config.googleIosClientId);
+if (googleEnabled) {
+  GoogleSignin.configure({ webClientId: config.googleWebClientId, iosClientId: config.googleIosClientId || undefined });
+}
 
 type AuthState = {
   ready: boolean;
@@ -23,6 +32,8 @@ type AuthState = {
   suggestedName: string;
   refreshProfile: () => Promise<void>;
   signInWithApple: () => Promise<void>;
+  /** Resolves false if the user closed the Google sheet. */
+  signInWithGoogle: () => Promise<boolean>;
   /** Resolves true when a new account must confirm its email before signing in. */
   signInWithEmail: (email: string, password: string, create: boolean) => Promise<boolean>;
   signOut: () => Promise<void>;
@@ -74,6 +85,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     analytics.track('signed_in', { method: 'apple' });
   }, []);
 
+  const signInWithGoogle = useCallback(async () => {
+    if (Platform.OS === 'android') await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
+    const res = await GoogleSignin.signIn();
+    if (!isSuccessResponse(res)) return false; // cancelled
+    if (!res.data.idToken) throw new Error('Google did not return an identity token');
+    if (res.data.user.givenName) setSuggestedName(res.data.user.givenName);
+    const { error } = await supabase.auth.signInWithIdToken({ provider: 'google', token: res.data.idToken });
+    if (error) throw error;
+    analytics.track('signed_in', { method: 'google' });
+    return true;
+  }, []);
+
   const signInWithEmail = useCallback(async (email: string, password: string, create: boolean) => {
     const { data, error } = create
       ? await supabase.auth.signUp({ email, password })
@@ -85,12 +108,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     await supabase.auth.signOut();
+    if (googleEnabled) await GoogleSignin.signOut().catch(() => undefined); // allow picking another account
     analytics.reset();
   }, []);
 
   const value = useMemo(
-    () => ({ ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithEmail, signOut }),
-    [ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithEmail, signOut],
+    () => ({ ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail, signOut }),
+    [ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

@@ -8,7 +8,8 @@
     "scheme": "bookdate",
     "userInterfaceStyle": "light",
     "platforms": [
-      "ios"
+      "ios",
+      "android"
     ],
     "ios": {
       "bundleIdentifier": "com.amitdas.bookdate",
@@ -46,6 +47,25 @@
           }
         ]
       }
+    },
+    "android": {
+      "package": "com.amitdas.bookdate",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/images/android-foreground.png",
+        "backgroundColor": "#8C1C3A"
+      },
+      "permissions": [
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION"
+      ],
+      "blockedPermissions": [
+        "android.permission.ACCESS_BACKGROUND_LOCATION",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ],
+      "predictiveBackGestureEnabled": false
     },
     "plugins": [
       "expo-router",

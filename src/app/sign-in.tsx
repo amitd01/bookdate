@@ -1,16 +1,17 @@
-/** Welcome + sign in: Sign in with Apple, or email/password. */
+/** Welcome + sign in: Apple (iOS), Google (when configured), or email/password. */
+import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import * as AppleAuthentication from 'expo-apple-authentication';
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Linking, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Field } from '@/components/ui';
-import { colors, space, type } from '@/constants/theme';
-import { useAuth } from '@/lib/auth';
+import { colors, keyboardBehavior, space, type } from '@/constants/theme';
+import { googleEnabled, useAuth } from '@/lib/auth';
 import { config } from '@/lib/config';
 
 export default function SignIn() {
-  const { signInWithApple, signInWithEmail } = useAuth();
+  const { signInWithApple, signInWithGoogle, signInWithEmail } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [create, setCreate] = useState(false);
@@ -22,6 +23,14 @@ export default function SignIn() {
     } catch (e: unknown) {
       // User closing the Apple sheet is not an error worth showing.
       if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') Alert.alert('Sign in failed', String((e as Error).message));
+    }
+  };
+
+  const google = async () => {
+    try {
+      await signInWithGoogle();
+    } catch (e) {
+      Alert.alert('Google sign in failed', (e as Error).message);
     }
   };
 
@@ -39,7 +48,7 @@ export default function SignIn() {
 
   return (
     <SafeAreaView style={s.safe}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1 }}>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
           <View style={s.hero}>
             <Text style={s.logo}>📚❤️</Text>
@@ -49,13 +58,19 @@ export default function SignIn() {
             </Text>
           </View>
 
-          <AppleAuthentication.AppleAuthenticationButton
-            buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-            buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
-            cornerRadius={26}
-            style={{ height: 52 }}
-            onPress={apple}
-          />
+          {Platform.OS === 'ios' && (
+            <AppleAuthentication.AppleAuthenticationButton
+              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
+              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.BLACK}
+              cornerRadius={26}
+              style={{ height: 52 }}
+              onPress={apple}
+            />
+          )}
+          {googleEnabled && (
+            <GoogleSigninButton size={GoogleSigninButton.Size.Wide} color={GoogleSigninButton.Color.Light}
+              style={{ alignSelf: 'stretch', height: 52 }} onPress={google} />
+          )}
 
           <Text style={[type.small, { textAlign: 'center' }]}>or use email</Text>
           <Field label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" autoComplete="email"

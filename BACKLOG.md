@@ -18,3 +18,4 @@ Status: ✅ done (on `main`) · 🔧 to do · ⚙️ config (Supabase/App Store,
 | # | Idea | Status |
 |---|---|---|
 | — | Over-the-air updates (`expo-updates`) so JS fixes ship without a rebuild | ❓ |
+| — | **Android app + Google sign-in** (cross-platform action sheet, Android date picker, Material icons, FCM push, Play docs) | 🔧 PR open |

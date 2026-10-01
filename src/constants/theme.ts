@@ -2,6 +2,14 @@
  * BookDate design tokens: warm "library" palette — paper, ink and a
  * burgundy accent. The app ships in light mode only (see app.json).
  */
+import { Platform } from 'react-native';
+
+/** System serif: New York on iOS, Noto Serif on Android. */
+export const serif = Platform.select({ ios: 'ui-serif', default: 'serif' });
+
+/** KeyboardAvoidingView mode: iOS needs padding; Android (edge-to-edge) resizes natively. */
+export const keyboardBehavior = Platform.OS === 'ios' ? 'padding' : undefined;
+
 export const colors = {
   paper: '#FBF6EE',      // screen background
   card: '#FFFFFF',
@@ -19,8 +27,8 @@ export const radius = { sm: 8, md: 14, lg: 22, pill: 999 } as const;
 export const space = (n: number) => n * 4;
 
 export const type = {
-  title: { fontSize: 30, fontWeight: '800', color: colors.ink, fontFamily: 'ui-serif' },
-  h2: { fontSize: 20, fontWeight: '700', color: colors.ink, fontFamily: 'ui-serif' },
+  title: { fontSize: 30, fontWeight: '800', color: colors.ink, fontFamily: serif },
+  h2: { fontSize: 20, fontWeight: '700', color: colors.ink, fontFamily: serif },
   body: { fontSize: 16, color: colors.ink },
   small: { fontSize: 13, color: colors.inkMuted },
 } as const;

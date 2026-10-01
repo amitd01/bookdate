@@ -5,6 +5,7 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-community/datetimepicker": "9.1.0",
+    "@react-native-google-signin/google-signin": "^16.1.5",
     "@supabase/supabase-js": "^2.117.2",
     "expo": "~57.0.26",
     "expo-apple-authentication": "~57.0.2",
@@ -47,7 +48,10 @@
     "lint": "expo lint",
     "seed:books": "node scripts/seed-books.mjs",
     "build:ios": "npx eas-cli@latest build -p ios --profile production",
-    "submit:ios": "npx eas-cli@latest submit -p ios --latest"
+    "submit:ios": "npx eas-cli@latest submit -p ios --latest",
+    "build:android": "npx eas-cli@latest build -p android --profile production",
+    "build:android:apk": "npx eas-cli@latest build -p android --profile preview",
+    "submit:android": "npx eas-cli@latest submit -p android --latest"
   },
   "private": true
 }
