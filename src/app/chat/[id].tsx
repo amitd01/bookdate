@@ -121,6 +121,7 @@ export default function Chat() {
       }} />
       <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100} style={{ flex: 1 }}>
         <FlatList
+          style={{ flex: 1 }}
           data={[...messages].reverse()}
           inverted
           keyExtractor={(m) => String(m.id)}
@@ -136,8 +137,11 @@ export default function Chat() {
           }}
         />
         {messages.length < 4 && (
+          // flexGrow 0: a horizontal list would otherwise stretch to share the
+          // screen with the messages list, ballooning the chips vertically.
           <FlatList horizontal data={PROMPTS} keyExtractor={(p) => p} showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4), paddingBottom: space(2) }}
+            style={s.prompts}
+            contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4), paddingBottom: space(2), alignItems: 'center' }}
             renderItem={({ item }) => (
               <Pressable style={s.prompt} onPress={() => setDraft(item)}><Text style={{ color: colors.accent }}>{item}</Text></Pressable>
             )} />
@@ -160,6 +164,7 @@ const s = StyleSheet.create({
   bubble: { maxWidth: '80%', paddingVertical: space(2.5), paddingHorizontal: space(3.5), borderRadius: 18 },
   mine: { alignSelf: 'flex-end', backgroundColor: colors.accent, borderBottomRightRadius: 4 },
   theirs: { alignSelf: 'flex-start', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderBottomLeftRadius: 4 },
+  prompts: { flexGrow: 0, flexShrink: 0 },
   prompt: { borderWidth: 1, borderColor: colors.accent, borderRadius: radius.pill, paddingHorizontal: space(3), paddingVertical: space(1.5), backgroundColor: colors.accentSoft },
   composer: { flexDirection: 'row', alignItems: 'flex-end', gap: space(2), padding: space(3), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, backgroundColor: colors.paper },
   input: { flex: 1, maxHeight: 120, backgroundColor: colors.card, borderRadius: 20, borderWidth: 1, borderColor: colors.line, paddingHorizontal: space(4), paddingVertical: space(2.5), fontSize: 16, color: colors.ink },
