@@ -56,7 +56,7 @@
           "locationWhenInUsePermission": "BookDate uses your location to match you with readers less than 15 km away. Your exact location is never shown to anyone.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false,
-          "motionUsagePermission": false
+          "motionUsagePermission": "BookDate does not use your motion or fitness activity. This permission is never requested."
         }
       ],
       [
