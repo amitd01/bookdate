@@ -14,7 +14,7 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
       - run: npm run lint
-      - run: npx expo export -p ios --output-dir dist   # proves the iOS bundle compiles
+      - run: npx expo export -p ios -p android --output-dir dist   # proves both bundles compile
 
   database:
     runs-on: ubuntu-latest

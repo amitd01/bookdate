@@ -10,6 +10,14 @@ additional_redirect_urls = ["bookdate://"]
 enable_signup = true
 enable_confirmations = true
 
+# Native Sign in with Google: list the Web, iOS and Android OAuth client ids
+# (comma-separated) and skip the nonce check (the iOS SDK adds an unhashed nonce).
+[auth.external.google]
+enabled = true
+client_id = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID)"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_SECRET)"
+skip_nonce_check = true
+
 # Native Sign in with Apple: the iOS bundle id must be listed as a client id.
 [auth.external.apple]
 enabled = true

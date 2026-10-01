@@ -1,8 +1,13 @@
 {
-  "cli": { "version": ">= 16.0.0", "appVersionSource": "remote" },
+  "cli": {
+    "version": ">= 16.0.0",
+    "appVersionSource": "remote"
+  },
   "build": {
     "base": {
-      "ios": { "resourceClass": "m-medium" }
+      "ios": {
+        "resourceClass": "m-medium"
+      }
     },
     "development": {
       "extends": "base",
@@ -13,7 +18,10 @@
     "preview": {
       "extends": "base",
       "distribution": "internal",
-      "environment": "preview"
+      "environment": "preview",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "extends": "base",
@@ -25,6 +33,10 @@
     "production": {
       "ios": {
         "ascAppId": "6817877483"
+      },
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
       }
     }
   }

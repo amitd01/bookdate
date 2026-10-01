@@ -10,3 +10,5 @@ android/
 expo-env.d.ts
 .DS_Store
 supabase/.temp/
+google-play-service-account.json
+google-services.json

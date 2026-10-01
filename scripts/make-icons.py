@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generates the app icon (1024², opaque — App Store requirement) and splash
-mark: a cream open book with a burgundy heart rising from its pages.
+"""Generates the app icon (1024², opaque — App Store requirement), the splash
+mark, and the Android adaptive-icon foreground: a cream open book with a heart.
 Re-run after tweaking colours:  python3 scripts/make-icons.py  (needs Pillow)"""
 import math
 from PIL import Image, ImageDraw
@@ -40,4 +40,15 @@ icon.resize((1024, 1024), Image.LANCZOS).save('assets/images/icon.png')
 splash = Image.new('RGBA', (S, S), (0, 0, 0, 0))
 mark(splash, False)
 splash.resize((1024, 1024), Image.LANCZOS).save('assets/images/splash-icon.png')
+# Android adaptive icon: launcher masks the outer third, so shrink the mark to
+# ~62% and centre it on a transparent canvas (background colour set in app.json).
+fg = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+mark(fg, True)
+bbox = fg.getbbox()
+art = fg.crop(bbox)
+scale = (S * 0.62) / max(art.size)
+art = art.resize((int(art.width * scale), int(art.height * scale)), Image.LANCZOS)
+canvas = Image.new('RGBA', (S, S), (0, 0, 0, 0))
+canvas.paste(art, ((S - art.width) // 2, (S - art.height) // 2), art)
+canvas.resize((1024, 1024), Image.LANCZOS).save('assets/images/android-foreground.png')
 print('icons written')

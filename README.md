@@ -3,8 +3,8 @@
 **Tinder for book lovers.** Swipe right or left on book *covers*. When a reader less than 15 km away
 loves the same book, it's a match — and your chat opens as a two-person book club about that book.
 
-iOS-only app built with **Expo (React Native) + Supabase**, ready to build and submit to the App Store
-from any machine (no Mac required) through **EAS Build / Submit**.
+iOS and Android app built with **Expo (React Native) + Supabase** from one codebase, built and submitted
+to the App Store and Google Play from any machine (no Mac required) through **EAS Build / Submit**.
 
 ---
 
@@ -12,7 +12,7 @@ from any machine (no Mac required) through **EAS Build / Submit**.
 
 | Area | What's in v1 |
 |---|---|
-| **Onboarding** | Sign in with Apple or email → name, birthday (18+ gate), gender → who to meet (genders, age range) → ≥3 favourite genres → optional bio + community rules → location & push permissions |
+| **Onboarding** | Sign in with Apple (iOS), Google, or email → name, birthday (18+ gate), gender → who to meet (genders, age range) → ≥3 favourite genres → optional bio + community rules → location & push permissions |
 | **Discover** | Gesture swipe deck of covers (drag, fling, or ✕/♥ buttons), haptics, "❤️ 3 readers near you loved this" hints, "It's a book date!" match celebration |
 | **Matching** | Mutual right-swipe on the same book **+** both within **15 km (fixed)** **+** each fits the other's gender & age preferences **+** no block either way |
 | **Book club chat** | Realtime 1:1 chat headed by the shared book and partner's reading profile, discussion-prompt chips, push notifications for matches & messages |
@@ -64,7 +64,7 @@ src/constants/           theme tokens, genres.json (shared with seed script)
 supabase/migrations/     schema, RLS, RPCs, matching & push triggers, analytics views
 supabase/tests/          PostGIS scenario tests (run in CI)
 scripts/                 seed-books.mjs, seed-demo.mjs, make-icons.py
-docs/                    APP_STORE.md (submission guide) + GitHub Pages site: privacy, terms, support
+docs/                    APP_STORE.md, PLAY_STORE.md (store guides) + GitHub Pages site: privacy, terms, support, delete-account
 ```
 
 ## Setup
@@ -117,6 +117,16 @@ npx eas-cli env:create --environment production --name EXPO_PUBLIC_SUPABASE_ANON
 
 npm run build:ios     # eas build -p ios --profile production  (EAS handles certificates & profiles)
 npm run submit:ios    # eas submit -p ios --latest  → TestFlight / App Store Connect
+```
+
+## Android & Google sign-in
+
+Same code, platform tweaks only (Material icons, Android date dialog, cross-platform action sheet, edge-to-edge keyboard).
+Setup for Google sign-in, Android push (Firebase) and Google Play: **[docs/PLAY_STORE.md](docs/PLAY_STORE.md)**.
+
+```bash
+npm run build:android:apk   # installable APK for testers
+npm run build:android       # AAB for Google Play
 ```
 
 ## Analytics
