@@ -9,6 +9,8 @@ export const config = {
   posthogKey: process.env.EXPO_PUBLIC_POSTHOG_KEY ?? '',
   posthogHost: process.env.EXPO_PUBLIC_POSTHOG_HOST ?? 'https://us.i.posthog.com',
   termsUrl: process.env.EXPO_PUBLIC_TERMS_URL ?? 'https://amitd01.github.io/bookdate/terms/',
+  /** Where the sign-up confirmation link lands (must be in Supabase → Auth → Redirect URLs). */
+  confirmedUrl: process.env.EXPO_PUBLIC_CONFIRMED_URL ?? 'https://amitd01.github.io/bookdate/confirmed/',
   privacyUrl: process.env.EXPO_PUBLIC_PRIVACY_URL ?? 'https://amitd01.github.io/bookdate/privacy/',
   /** Google OAuth client IDs (Google Cloud console). Google sign-in is hidden until set. */
   googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',

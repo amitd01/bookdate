@@ -7,8 +7,12 @@ import { Platform } from 'react-native';
 /** System serif: New York on iOS, Noto Serif on Android. */
 export const serif = Platform.select({ ios: 'ui-serif', default: 'serif' });
 
-/** KeyboardAvoidingView mode: iOS needs padding; Android (edge-to-edge) resizes natively. */
-export const keyboardBehavior = Platform.OS === 'ios' ? 'padding' : undefined;
+/**
+ * KeyboardAvoidingView mode. 'padding' on both platforms: under Android
+ * edge-to-edge (forced on Android 15+) the window no longer resizes for the
+ * keyboard, and where it still does the measured overlap is 0, so it's safe.
+ */
+export const keyboardBehavior = 'padding' as const;
 
 export const colors = {
   paper: '#FBF6EE',      // screen background

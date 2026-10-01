@@ -34,8 +34,12 @@ type AuthState = {
   signInWithApple: () => Promise<void>;
   /** Resolves false if the user closed the Google sheet. */
   signInWithGoogle: () => Promise<boolean>;
-  /** Resolves true when a new account must confirm its email before signing in. */
+  /** Resolves true when the account must confirm its email (code or link) before signing in. */
   signInWithEmail: (email: string, password: string, create: boolean) => Promise<boolean>;
+  /** Confirms a new email account with the 6-digit code from the sign-up email (signs in). */
+  verifyEmailCode: (email: string, code: string) => Promise<void>;
+  /** Re-sends the sign-up confirmation email (code + link). */
+  resendEmailCode: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -99,11 +103,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithEmail = useCallback(async (email: string, password: string, create: boolean) => {
     const { data, error } = create
-      ? await supabase.auth.signUp({ email, password })
+      ? await supabase.auth.signUp({ email, password, options: { emailRedirectTo: config.confirmedUrl } })
       : await supabase.auth.signInWithPassword({ email, password });
+    // Signing in before confirming: send them to the code step instead of an error.
+    if (error && !create && /not confirmed/i.test(error.message)) return true;
     if (error) throw error;
     analytics.track(create ? 'signed_up' : 'signed_in', { method: 'email' });
     return !data.session;
+  }, []);
+
+  const verifyEmailCode = useCallback(async (email: string, code: string) => {
+    const { error } = await supabase.auth.verifyOtp({ email, token: code, type: 'signup' });
+    if (error) throw error;
+    analytics.track('email_confirmed', { method: 'code' });
+  }, []);
+
+  const resendEmailCode = useCallback(async (email: string) => {
+    const { error } = await supabase.auth.resend({ type: 'signup', email, options: { emailRedirectTo: config.confirmedUrl } });
+    if (error) throw error;
   }, []);
 
   const signOut = useCallback(async () => {
@@ -113,8 +130,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail, signOut }),
-    [ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail, signOut],
+    () => ({ ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
+      verifyEmailCode, resendEmailCode, signOut }),
+    [ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
+      verifyEmailCode, resendEmailCode, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
