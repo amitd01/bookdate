@@ -2,4 +2,4 @@
 title: BookDate
 description: Swipe on covers, not faces.
 theme: jekyll-theme-minimal
-exclude: [APP_STORE.md]
+exclude: [APP_STORE.md, PLAY_STORE.md]

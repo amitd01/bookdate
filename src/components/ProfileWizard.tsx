@@ -5,14 +5,14 @@
  *   - "edit": all sections on one scrolling page
  * Sections: about you → who to meet → genres → bio.
  */
-import DateTimePicker from '@react-native-community/datetimepicker';
+import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
 import { useState, type ReactNode } from 'react';
-import { KeyboardAvoidingView, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button, Chip, ChipGroup, Field, Label, Stepper } from '@/components/ui';
 import { GENDERS, GENRES, RADIUS_KM, type Gender } from '@/constants/genres';
-import { colors, space, type } from '@/constants/theme';
+import { colors, keyboardBehavior, space, type } from '@/constants/theme';
 import { config } from '@/lib/config';
 import type { ProfileInput } from '@/lib/types';
 
@@ -48,8 +48,19 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
           <Field label="First name" value={p.display_name} onChangeText={(t) => set({ display_name: t })}
             maxLength={40} autoCapitalize="words" textContentType="givenName" placeholder="e.g. Maya" />
           <Label>Birthday (18+ only)</Label>
-          <DateTimePicker value={new Date(p.birthdate)} mode="date" display="spinner" maximumDate={yearsAgo(18)}
-            minimumDate={yearsAgo(100)} onChange={(_, d) => d && set({ birthdate: toISODate(d) })} />
+          {Platform.OS === 'ios' ? (
+            <DateTimePicker value={new Date(p.birthdate)} mode="date" display="spinner" maximumDate={yearsAgo(18)}
+              minimumDate={yearsAgo(100)} onChange={(_, d) => d && set({ birthdate: toISODate(d) })} />
+          ) : (
+            // Android's picker is a dialog, so show the date and open it on tap.
+            <Pressable style={s.dateButton} accessibilityRole="button" onPress={() => DateTimePickerAndroid.open({
+              value: new Date(p.birthdate), mode: 'date', maximumDate: yearsAgo(18), minimumDate: yearsAgo(100),
+              onChange: (e, d) => { if (e.type === 'set' && d) set({ birthdate: toISODate(d) }); },
+            })}>
+              <Text style={type.body}>{new Date(p.birthdate).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
+              <Text style={{ color: colors.accent, fontWeight: '600' }}>Change</Text>
+            </Pressable>
+          )}
           <Label>I am a</Label>
           <ChipGroup>
             {GENDERS.map((g) => <Chip key={g.value} label={g.label} selected={p.gender === g.value} onPress={() => set({ gender: g.value })} />)}
@@ -137,7 +148,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
 
   return (
     <SafeAreaView style={s.safe} edges={mode === 'edit' ? ['bottom'] : ['top', 'bottom']}>
-      <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1 }}>
         {mode === 'onboarding' && (
           <View style={s.progress}>
             {sections.map((_, i) => <View key={i} style={[s.dot, i <= step && { backgroundColor: colors.accent }]} />)}
@@ -169,6 +180,7 @@ const s = StyleSheet.create({
   section: { gap: space(4) },
   row: { flexDirection: 'row', alignItems: 'center', gap: space(3) },
   bio: { minHeight: 96, textAlignVertical: 'top' },
+  dateButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: space(3.5) },
   agree: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start' },
   checkbox: { fontSize: 22, color: colors.accent },
   link: { color: colors.accent, fontWeight: '600' },

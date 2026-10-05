@@ -12,7 +12,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { BookCover } from '@/components/BookCover';
 import { genreLabel } from '@/constants/genres';
-import { colors, radius, space } from '@/constants/theme';
+import { colors, radius, serif, space } from '@/constants/theme';
 import type { FeedBook } from '@/lib/types';
 
 export type SwipeCardHandle = { swipe: (liked: boolean) => void };
@@ -85,12 +85,12 @@ export function SwipeCard({ book, onSwiped, ref }: Props) {
 const s = StyleSheet.create({
   card: {
     ...StyleSheet.absoluteFill, borderRadius: radius.lg, backgroundColor: colors.card, overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 8 },
+    shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 16, shadowOffset: { width: 0, height: 8 }, elevation: 6,
   },
   cover: { flex: 1 },
   info: { padding: space(4), gap: space(1), backgroundColor: colors.card },
   nearby: { color: colors.accent, fontWeight: '700', fontSize: 14, marginBottom: space(1) },
-  title: { fontSize: 22, fontWeight: '800', color: colors.ink, fontFamily: 'ui-serif' },
+  title: { fontSize: 22, fontWeight: '800', color: colors.ink, fontFamily: serif },
   meta: { fontSize: 14, color: colors.inkMuted },
   stamp: { position: 'absolute', top: space(8), paddingHorizontal: space(3), paddingVertical: space(1.5), borderWidth: 4, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.85)' },
   like: { left: space(6), borderColor: colors.success, transform: [{ rotate: '-14deg' }] },

@@ -3,7 +3,7 @@ import { Image } from 'expo-image';
 import { useState } from 'react';
 import { StyleSheet, Text, View, type ViewStyle } from 'react-native';
 
-import { colors } from '@/constants/theme';
+import { colors, serif } from '@/constants/theme';
 
 type Props = { uri: string; title: string; author?: string | null; style?: ViewStyle; radius?: number };
 
@@ -33,6 +33,6 @@ export function BookCover({ uri, title, author, style, radius = 12 }: Props) {
 
 const s = StyleSheet.create({
   fallback: { flex: 1, padding: 16, justifyContent: 'center', gap: 8 },
-  title: { color: '#fff', fontSize: 22, fontWeight: '800', fontFamily: 'ui-serif' },
+  title: { color: '#fff', fontSize: 22, fontWeight: '800', fontFamily: serif },
   author: { color: '#F4E3E7', fontSize: 14 },
 });

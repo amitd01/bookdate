@@ -1,16 +1,17 @@
 /**
  * The two-person book club. Shows the book that sparked the match, the
  * partner's reading profile, discussion prompts, and a realtime chat.
- * Safety actions (report / block / unmatch) live in the header menu.
+ * Safety actions (report / block / unmatch) live in the header menu (OptionSheet).
  */
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, FlatList, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BookCover } from '@/components/BookCover';
+import { OptionSheet, type Sheet } from '@/components/OptionSheet';
 import { genreLabel } from '@/constants/genres';
-import { colors, radius, space, type } from '@/constants/theme';
+import { colors, keyboardBehavior, radius, space, type } from '@/constants/theme';
 import { analytics } from '@/lib/analytics';
 import { blockUser, getMatches, getMessages, reportUser, sendMessage, subscribeToMessages, unmatch } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -66,35 +67,39 @@ export default function Chat() {
 
   const leave = () => router.back();
 
+  // Safety menus use the cross-platform OptionSheet (ActionSheetIOS is iOS-only).
+  const [sheet, setSheet] = useState<Sheet | null>(null);
+
   const report = () => {
     if (!match) return;
-    ActionSheetIOS.showActionSheetWithOptions(
-      { title: `Report ${match.other_name}`, options: [...REPORT_REASONS.map((r) => r.label), 'Cancel'], cancelButtonIndex: REPORT_REASONS.length },
-      async (i) => {
-        if (i >= REPORT_REASONS.length) return;
-        await reportUser(match.other_id, REPORT_REASONS[i].value);
-        await blockUser(match.other_id); // reporting also blocks, so the content disappears immediately
-        Alert.alert('Thanks for reporting', 'Our team reviews every report within 24 hours. You won\'t see this reader again.', [{ text: 'OK', onPress: leave }]);
-      },
-    );
+    setSheet({
+      title: `Report ${match.other_name}`,
+      options: REPORT_REASONS.map((r) => ({
+        label: r.label,
+        onPress: async () => {
+          await reportUser(match.other_id, r.value);
+          await blockUser(match.other_id); // reporting also blocks, so the content disappears immediately
+          Alert.alert('Thanks for reporting', 'Our team reviews every report within 24 hours. You won\'t see this reader again.', [{ text: 'OK', onPress: leave }]);
+        },
+      })),
+    });
   };
 
   const menu = () => {
     if (!match) return;
-    ActionSheetIOS.showActionSheetWithOptions(
-      { options: ['Report', 'Block', 'Unmatch', 'Cancel'], destructiveButtonIndex: [0, 1], cancelButtonIndex: 3 },
-      (i) => {
-        if (i === 0) report();
-        if (i === 1) Alert.alert(`Block ${match.other_name}?`, 'They won\'t be able to match or message you again.', [
+    setSheet({
+      options: [
+        { label: 'Report', destructive: true, onPress: report },
+        { label: 'Block', destructive: true, onPress: () => Alert.alert(`Block ${match.other_name}?`, 'They won\'t be able to match or message you again.', [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Block', style: 'destructive', onPress: () => blockUser(match.other_id).then(leave) },
-        ]);
-        if (i === 2) Alert.alert('Unmatch?', 'This conversation will be deleted for both of you.', [
+        ]) },
+        { label: 'Unmatch', onPress: () => Alert.alert('Unmatch?', 'This conversation will be deleted for both of you.', [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Unmatch', style: 'destructive', onPress: () => unmatch(match.match_id).then(leave) },
-        ]);
-      },
-    );
+        ]) },
+      ],
+    });
   };
 
   const header = match && (
@@ -119,7 +124,7 @@ export default function Chat() {
           </Pressable>
         ),
       }} />
-      <KeyboardAvoidingView behavior="padding" keyboardVerticalOffset={100} style={{ flex: 1 }}>
+      <KeyboardAvoidingView behavior={keyboardBehavior} keyboardVerticalOffset={100} style={{ flex: 1 }}>
         <FlatList
           style={{ flex: 1 }}
           data={[...messages].reverse()}
@@ -154,6 +159,7 @@ export default function Chat() {
           </Pressable>
         </View>
       </KeyboardAvoidingView>
+      <OptionSheet sheet={sheet} onClose={() => setSheet(null)} />
     </SafeAreaView>
   );
 }

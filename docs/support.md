@@ -27,4 +27,4 @@ Profile → Delete account. This permanently deletes your profile, swipes, match
 **I'm not seeing any new books.**
 Pull to refresh on Discover, or check back later — we add books regularly.
 
-[Privacy Policy](../privacy/) · [Terms of Use](../terms/)
+[Privacy Policy](../privacy/) · [Terms of Use](../terms/) · [Delete your account](../delete-account/)

@@ -10,3 +10,4 @@ permalink: /
 - [Privacy Policy](privacy/)
 - [Terms of Use & Community Rules](terms/)
 - [Support](support/)
+- [Delete your account](delete-account/)

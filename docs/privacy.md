@@ -21,14 +21,14 @@ BookDate is for adults **18 years and older** only. We do not knowingly collect 
 
 | Category | What | Source |
 |---|---|---|
-| **Account** | Email address (or an Apple "Hide My Email" relay address), internal user ID, sign-in method | You / Apple |
+| **Account** | Email address (or an Apple "Hide My Email" relay address), internal user ID, sign-in method; if you use Google sign-in, your Google account email and first name | You / Apple / Google |
 | **Profile** | First name, date of birth (used to confirm you are 18+ and to show your age), gender, the genders and age range you'd like to meet, favourite genres, optional bio | You |
 | **Approximate location** | Your device location while the app is open, **rounded to about 100 metres** before it is stored | Your device, with your permission |
 | **Activity** | Books you swipe on (like/pass), your matches, messages you send and receive, blocks and reports | Your use of the app |
 | **Device & notifications** | Push-notification token, app version, device model and OS version | Your device |
 | **Product analytics** | In-app events (for example "book swiped", "message sent") linked to your user ID | Your use of the app |
 
-We **do not** collect photos, contacts, precise location history, payment information, or advertising identifiers (IDFA), and we do not track you across other companies' apps or websites.
+We **do not** collect photos, contacts, precise location history, payment information, or advertising identifiers (Apple IDFA or Google Advertising ID), and we do not track you across other companies' apps or websites.
 
 Gender and dating preferences can be sensitive. We collect them only because you choose to provide them for matching, and only matched users see your gender.
 
@@ -56,7 +56,8 @@ We do **not sell** or rent your personal data and we do not share it for adverti
 
 - **Supabase** — database, authentication and hosting
 - **Expo (650 Industries)** — delivery of push notifications
-- **Apple** — Sign in with Apple and push notifications (APNs)
+- **Apple** — Sign in with Apple and push notifications on iPhone (APNs)
+- **Google** — Sign in with Google, and push notifications on Android (Firebase Cloud Messaging)
 - **PostHog** — product analytics
 
 We may also disclose data if required by law, a court order or a government authority, or to protect the safety of any person.
@@ -70,7 +71,7 @@ Our service providers may store and process data outside India (for example in t
 ## 7. How long we keep data
 
 - **While your account is active:** we keep your data to provide the service.
-- **When you delete your account** (Profile → Delete account): your account, profile, location, swipes, matches and messages are **deleted immediately** from our live database. Residual copies in encrypted backups are overwritten within 30 days.
+- **When you delete your account** (Profile → Delete account, or by email — see [Delete your account](../delete-account/)): your account, profile, location, swipes, matches and messages are **deleted immediately** from our live database. Residual copies in encrypted backups are overwritten within 30 days.
 - **Safety records:** reports you filed or that were filed about you may be kept for up to 12 months to prevent abuse and meet legal obligations.
 - **Analytics** events are kept for up to 12 months.
 
