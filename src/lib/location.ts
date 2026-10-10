@@ -14,7 +14,13 @@ export async function getLocationPermission(): Promise<LocationState> {
   return status as LocationState;
 }
 
-/** Asks for permission if needed, then uploads the current position. */
+/** Asks for location permission (from an explainer screen, never cold). */
+export async function requestLocationPermission(): Promise<LocationState> {
+  const { status } = await Location.requestForegroundPermissionsAsync();
+  return status as LocationState;
+}
+
+/** Asks for permission if needed (and `ask`), then uploads the current position. */
 export async function syncLocation(ask = true): Promise<LocationState> {
   let { status } = await Location.getForegroundPermissionsAsync();
   if (status === 'undetermined' && ask) ({ status } = await Location.requestForegroundPermissionsAsync());

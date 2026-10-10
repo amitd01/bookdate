@@ -14,7 +14,17 @@ Notifications.setNotificationHandler({
   }),
 });
 
-/** Requests permission (once) and stores the Expo push token on the profile. */
+/** Asks for notification permission (used by the onboarding explainer screen). */
+export async function requestPushPermission() {
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status === 'undetermined') await Notifications.requestPermissionsAsync();
+}
+
+/**
+ * Stores the Expo push token on the profile when notifications are allowed.
+ * Never prompts: the onboarding explainer asks first, so the system dialog
+ * doesn't appear without context.
+ */
 export async function registerForPush() {
   if (!Device.isDevice) return; // simulators can't receive pushes
   // Android 8+ needs a channel before notifications can be shown.
@@ -23,10 +33,7 @@ export async function registerForPush() {
       name: 'Matches & messages', importance: Notifications.AndroidImportance.HIGH, lightColor: '#8C1C3A',
     });
   }
-  const { status: existing } = await Notifications.getPermissionsAsync();
-  const status = existing === 'undetermined'
-    ? (await Notifications.requestPermissionsAsync()).status
-    : existing;
+  const { status } = await Notifications.getPermissionsAsync();
   if (status !== 'granted') return;
 
   const projectId = Constants.expoConfig?.extra?.eas?.projectId as string | undefined;

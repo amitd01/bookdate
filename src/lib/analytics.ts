@@ -3,8 +3,9 @@
  * If EXPO_PUBLIC_POSTHOG_KEY is unset every call is a no-op, so dev builds
  * and forks work without an analytics account.
  *
- * Funnel events: signed_up, onboarding_completed, book_swiped, match_created,
- * message_sent, match_opened, user_blocked, user_reported, account_deleted.
+ * Funnel events: signed_up, onboarding_completed, book_swiped (source deck|search),
+ * book_searched, match_created, message_sent, match_opened, unmatched,
+ * user_reported, invite_shared, profile_updated, account_deleted.
  */
 import PostHog from 'posthog-react-native';
 

@@ -23,9 +23,10 @@ type Props = {
   /** Spoken value for each thumb, e.g. (v) => `${v} km`. */
   describe: (v: number, thumb: number) => string;
   labels: string[]; // accessibility label per thumb
+  color?: string; // fill + thumb ring (teal in friends mode)
 };
 
-export function Slider({ values, min, max, onChange, describe, labels }: Props) {
+export function Slider({ values, min, max, onChange, describe, labels, color = colors.accent }: Props) {
   const [width, setWidth] = useState(0);
   const active = useSharedValue(0); // thumb being dragged (a shared value, so the React Compiler allows writes in handlers)
   const span = max - min;
@@ -60,7 +61,7 @@ export function Slider({ values, min, max, onChange, describe, labels }: Props) 
     <GestureDetector gesture={Gesture.Exclusive(pan, tap)}>
       <View style={s.root} onLayout={(e) => setWidth(e.nativeEvent.layout.width)}>
         <View style={s.rail}>
-          <View style={[s.fill, values.length > 1
+          <View style={[s.fill, { backgroundColor: color }, values.length > 1
             ? { left: `${pct(values[0])}%`, right: `${100 - pct(values[1])}%` }
             : { left: 0, right: `${100 - pct(values[0])}%` }]} />
         </View>
@@ -70,7 +71,7 @@ export function Slider({ values, min, max, onChange, describe, labels }: Props) 
             accessibilityValue={{ min, max, now: v, text: describe(v, i) }}
             accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
             onAccessibilityAction={onAction(i)}>
-            <View style={s.thumb} />
+            <View style={[s.thumb, { borderColor: color }]} />
           </View>
         ))}
       </View>

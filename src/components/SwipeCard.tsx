@@ -1,7 +1,8 @@
 /**
  * A draggable book card. Drag right = like, left = pass; past the threshold
  * (or on fling) the card flies off and `onSwiped` fires. Parents can also
- * swipe programmatically through the `ref` handle (used by the ✕ / ♥ buttons).
+ * swipe programmatically through the `ref` handle (used by the ✕ / ♥ buttons),
+ * and screen-reader users get "Like" / "Pass" actions on the card itself.
  * Shared values use .get()/.set() so the card is React Compiler compatible.
  */
 import { useImperativeHandle, type Ref } from 'react';
@@ -11,15 +12,19 @@ import Animated, { interpolate, useAnimatedStyle, useSharedValue, withSpring, wi
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BookCover } from '@/components/BookCover';
+import { Icon } from '@/components/Icon';
 import { genreLabel } from '@/constants/genres';
 import { colors, radius, serif, space } from '@/constants/theme';
 import type { FeedBook } from '@/lib/types';
 
 export type SwipeCardHandle = { swipe: (liked: boolean) => void };
 
-type Props = { book: FeedBook; onSwiped: (liked: boolean) => void; ref?: Ref<SwipeCardHandle> };
+/** "n readers near you loved this": the like that can match instantly. */
+export const nearbyText = (n: number) => `${n} ${n === 1 ? 'reader' : 'readers'} near you loved this`;
 
-export function SwipeCard({ book, onSwiped, ref }: Props) {
+type Props = { book: FeedBook; onSwiped: (liked: boolean) => void; likeColor?: string; ref?: Ref<SwipeCardHandle> };
+
+export function SwipeCard({ book, onSwiped, likeColor = colors.accent, ref }: Props) {
   const { width } = useWindowDimensions();
   const x = useSharedValue(0);
   const y = useSharedValue(0);
@@ -61,15 +66,23 @@ export function SwipeCard({ book, onSwiped, ref }: Props) {
 
   return (
     <GestureDetector gesture={pan}>
-      <Animated.View style={[s.card, cardStyle]} accessibilityLabel={`${book.title} by ${book.author ?? 'unknown author'}`}>
+      <Animated.View style={[s.card, cardStyle]} accessible
+        accessibilityLabel={[`${book.title} by ${book.author ?? 'unknown author'}`, book.nearby_likes > 0 && nearbyText(book.nearby_likes)].filter(Boolean).join('. ')}
+        accessibilityHint="Swipe right to like, left to pass, or use the actions menu"
+        accessibilityActions={[{ name: 'like', label: 'Like' }, { name: 'pass', label: 'Pass' }]}
+        onAccessibilityAction={(e) => flyOff(e.nativeEvent.actionName === 'like')}>
         <BookCover uri={book.cover_url} title={book.title} author={book.author} style={s.cover} radius={0} />
-        <Animated.View style={[s.stamp, s.like, likeStyle]}><Text style={[s.stampText, { color: colors.success }]}>READ IT</Text></Animated.View>
+        <Animated.View style={[s.stamp, s.like, { borderColor: likeColor }, likeStyle]}>
+          <Icon name="heart" size={22} color={likeColor} />
+          <Text style={[s.stampText, { color: likeColor }]}>LOVE IT</Text>
+        </Animated.View>
         <Animated.View style={[s.stamp, s.pass, passStyle]}><Text style={[s.stampText, { color: colors.pass }]}>PASS</Text></Animated.View>
         <View style={s.info}>
           {book.nearby_likes > 0 && (
-            <Text style={s.nearby}>
-              ❤️ {book.nearby_likes} {book.nearby_likes === 1 ? 'reader' : 'readers'} near you loved this
-            </Text>
+            <View style={s.nearby}>
+              <Icon name="pin" size={14} color={colors.gilt} />
+              <Text style={s.nearbyText}>{nearbyText(book.nearby_likes)}</Text>
+            </View>
           )}
           <Text style={s.title} numberOfLines={2}>{book.title}</Text>
           <Text style={s.meta} numberOfLines={1}>
@@ -89,11 +102,12 @@ const s = StyleSheet.create({
   },
   cover: { flex: 1 },
   info: { padding: space(4), gap: space(1), backgroundColor: colors.card },
-  nearby: { color: colors.accent, fontWeight: '700', fontSize: 14, marginBottom: space(1) },
+  nearby: { flexDirection: 'row', alignItems: 'center', gap: space(1), alignSelf: 'flex-start', backgroundColor: colors.giltSoft, borderRadius: radius.pill, paddingHorizontal: space(2.5), paddingVertical: space(1), marginBottom: space(1) },
+  nearbyText: { color: colors.gilt, fontWeight: '700', fontSize: 14 },
   title: { fontSize: 22, fontWeight: '800', color: colors.ink, fontFamily: serif },
   meta: { fontSize: 14, color: colors.inkMuted },
-  stamp: { position: 'absolute', top: space(8), paddingHorizontal: space(3), paddingVertical: space(1.5), borderWidth: 4, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.85)' },
-  like: { left: space(6), borderColor: colors.success, transform: [{ rotate: '-14deg' }] },
+  stamp: { position: 'absolute', top: space(8), flexDirection: 'row', alignItems: 'center', gap: space(1.5), paddingHorizontal: space(3), paddingVertical: space(1.5), borderWidth: 4, borderRadius: radius.sm, backgroundColor: 'rgba(255,255,255,0.9)' },
+  like: { left: space(6), transform: [{ rotate: '-14deg' }] },
   pass: { right: space(6), borderColor: colors.pass, transform: [{ rotate: '14deg' }] },
   stampText: { fontSize: 30, fontWeight: '900', letterSpacing: 2 },
 });

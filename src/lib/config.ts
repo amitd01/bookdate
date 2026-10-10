@@ -16,4 +16,7 @@ export const config = {
   googleWebClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ?? '',
   googleIosClientId: process.env.EXPO_PUBLIC_GOOGLE_IOS_CLIENT_ID ?? '',
   supportEmail: process.env.EXPO_PUBLIC_SUPPORT_EMAIL ?? 'amitdas+bookdatesupport@gmail.com',
+  /** Public website (invite links) and the safety tips section of the support page. */
+  siteUrl: process.env.EXPO_PUBLIC_SITE_URL ?? 'https://amitd01.github.io/bookdate/',
+  safetyUrl: process.env.EXPO_PUBLIC_SAFETY_URL ?? 'https://amitd01.github.io/bookdate/support/#safety-tips',
 };
