@@ -97,13 +97,33 @@ select pg_temp.check(not is_compatible(a, b), 'dating and friends readers never 
   from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
 set role authenticated;
 
+-- Synthetic readers: invisible to real readers unless one side is a tester.
+reset role;
+select set_config('request.jwt.claim.sub', '', false); -- act as the dashboard (no app user)
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000f');
+insert into profiles (id, display_name, birthdate, gender, interested_in, genres, looking_for, is_synthetic)
+  values ('00000000-0000-0000-0000-00000000000f', 'Farah', '1995-06-01', 'woman', '{woman}', '{fantasy,romance,classics}', 'friends', true);
+set role authenticated;
+select pg_temp.as_user('f'); select update_location(12.9720, 77.5950);
+select pg_temp.as_user('a');
+update profiles set is_synthetic = true where id = auth.uid();
+reset role;
+select pg_temp.check(not (select is_synthetic from profiles where display_name = 'Asha'), 'readers cannot flag themselves synthetic');
+select pg_temp.check(not is_compatible(a, f), 'no tester, no synthetic matches')
+  from profiles a, profiles f where a.display_name = 'Asha' and f.display_name = 'Farah';
+insert into testers (user_id) values ('00000000-0000-0000-0000-00000000000a');
+select pg_temp.check(is_compatible(a, f), 'testers can match synthetic readers')
+  from profiles a, profiles f where a.display_name = 'Asha' and f.display_name = 'Farah';
+set role authenticated;
+select pg_temp.check((select count(*) from testers) = 0, 'RLS: the tester list is not readable from the app');
+
 select pg_temp.as_user('b');
 select block_user('00000000-0000-0000-0000-00000000000a');
 select pg_temp.check((select count(*) from get_matches()) = 0, 'blocking removes the match');
 select delete_account();
 
 reset role;
-select pg_temp.check((select count(*) from profiles) = 4, 'delete_account cascades');
+select pg_temp.check((select count(*) from profiles) = 5, 'delete_account cascades');
 select pg_temp.check((select count(*) from net.sent) = 4, 'push sent for matches and messages (Esha has no push token)');
 select pg_temp.check((select count(*) from net.sent where body->>'title' like 'You found a book buddy%') = 1, 'friends matches use book-buddy push copy');
 select pg_temp.check((select count(*) from analytics_daily) = 30, 'analytics view has 30 days');

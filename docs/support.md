@@ -10,7 +10,7 @@ We're happy to help. Email **[amitdas+bookdatesupport@gmail.com](mailto:amitdas+
 ## Common questions
 
 **How does matching work?**
-Swipe right on book covers you love (or find a book with the search button and tap the heart). When a reader within your chosen distance (up to 15 km or 10 miles) also likes the same book, and you both fit each other's preferences, it's a match and your book-club chat opens. One like can match you with several readers at once.
+Swipe right on book covers you love (or find a book with the search button and tap the heart). When a reader within your chosen distance (up to 15 km or 10 miles) also likes the same book, and you both fit each other's preferences, it's a match and your book-club chat opens. One like can match you with up to 5 readers at once (the closest first).
 
 Every book you like is a standing invitation: if someone nearby likes it next week, you'll match then.
 

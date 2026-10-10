@@ -15,12 +15,13 @@ to the App Store and Google Play from any machine (no Mac required) through **EA
 | **Onboarding** | Sign in with Apple (iOS), Google, or email → four chapters (You · Looking for · Your shelf · Ground rules): name, birthday (18+, locked afterwards), gender, **Dating or Just meeting people**, who to meet (genders for dating, age + distance sliders), ≥3 genres, bio, community rules → explainers before the location and notification prompts. Nothing is preselected. |
 | **Discover** | Gesture swipe deck (drag, fling, ✕/♥ buttons or screen-reader actions), "n readers near you loved this" gilt badge + first-time tip, **genre browsing**, an honest nearby-readers chip, cold-start banner and empty states |
 | **Search** | Find a book by title/author in the catalogue or Open Library and like it straight from the results (same matching as a right swipe) |
-| **Matching** | Same mode **+** mutual like on the same book **+** within **both readers' chosen distance** (1–15 km or 1–10 mi; the smaller applies) **+** each fits the other's age (and, for dating, gender) preferences **+** no block either way. One like can match several readers; the match screen shows them all with opening moves. |
+| **Matching** | Same mode **+** mutual like on the same book **+** within **both readers' chosen distance** (1–15 km or 1–10 mi; the smaller applies) **+** each fits the other's age (and, for dating, gender) preferences **+** no block either way. One like matches up to 5 readers (closest first); the match screen shows them all with opening moves. |
 | **Book Dates** | New-match carousel, conversations led by the book, Date / Friend tags, unread dots, timestamps, tab badge, "Your turn" |
 | **Book club chat** | Realtime 1:1 chat headed by the shared book and partner's reading profile, book-specific prompts, day separators, push notifications |
 | **Personalisation** | Server-side feed ranking: chosen genres + learned genre affinity from swipes + nearby social proof + popularity + exploration |
 | **Profile** | Reader card, grouped preferences, invite, safety tips, legal links, support, sign out, **in-app account deletion** |
 | **Safety** | Shield menu in every chat: safety tips, report (with details), **unmatch & block** (keeps your like on the book), safety notice, server-side profanity masking, 18+ and birthday lock enforced in DB, locations rounded to ~100 m and never exposed |
+| **Test data** | `scripts/synthetic-readers.sql` seeds 10,062 synthetic readers (3 genders × ages 18–60, 3–5 genres, 20–60 likes) across Mumbai and Bengaluru. They're visible only to accounts in `public.testers`; remove them with `scripts/synthetic-readers-remove.sql` |
 | **Updates** | Over-the-air JS updates via EAS Update (`npm run update:production -- "message"`) |
 | **Analytics** | PostHog product events (funnel from sign-up → swipe → match → message) + SQL KPI views (`analytics_daily`, `analytics_top_books`) |
 

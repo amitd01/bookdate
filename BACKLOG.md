@@ -29,6 +29,7 @@ Decisions (design proposal, all as recommended): the tab stays "Book Dates" with
 | 10 | **"Just meeting people":** `looking_for` dating/friends; friends match any gender, only with friends; matches keep their mode (teal, "Book buddy") | ✅ 1.1 |
 | 11 | **Design / UX audit** ([proposal](https://claude.ai/artifact/L8187VGfF4sUCwhMAtHVj9)) — all P0 items: accessibility (44 pt targets, strong borders, contrast, card actions) · onboarding in 4 chapters, no preselected gender/birthday, "You're 27" · permission explainers · Discover header + nearby chip + coach mark + honest empty states · match moment v2 (every match, partner card, opening moves) · Book Dates (new-match carousel, unread dots, timestamps, tab badge, "Your turn") · system icons, "LOVE IT" stamp · chat safety shield, notice, report with details · grouped Profile | ✅ 1.1 |
 | 13 | **Choose your distance:** slider up to 15 km or 10 miles, km/mi toggle; age range slider | ✅ #4 |
+| 15 | **Synthetic test readers:** 10,062 readers in Mumbai + Bengaluru (`scripts/synthetic-readers.sql`), visible only to `public.testers`, excluded from analytics; one like now matches at most 5 readers (closest first) so dense cities don't flood a reader | ✅ 1.1 |
 | 14 | **Unmatch / report drops the person, keeps the book:** `unmatch()` silently blocks (no re-match on any book) and deletes the chat; your like stays so the book can match others | ✅ 1.1 |
 
 ### Next (P1, from the design proposal)
