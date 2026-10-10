@@ -5,7 +5,7 @@
  */
 import { analytics } from './analytics';
 import { supabase } from './supabase';
-import type { FeedBook, Match, Message, Profile, ProfileInput, ReportReason } from './types';
+import type { FeedBook, Match, Message, NearbyBucket, NewMatch, Profile, ProfileInput, ReportReason, SearchBook } from './types';
 
 function unwrap<T>({ data, error }: { data: T | null; error: { message: string } | null }): T {
   if (error) throw new Error(error.message);
@@ -24,7 +24,7 @@ async function uid() {
 export async function getMyProfile(): Promise<Profile | null> {
   const id = await uid();
   return unwrap(await supabase.from('profiles')
-    .select('id,display_name,birthdate,gender,interested_in,age_min,age_max,max_km,distance_unit,genres,bio')
+    .select('id,display_name,birthdate,gender,interested_in,looking_for,age_min,age_max,max_km,distance_unit,genres,bio')
     .eq('id', id).maybeSingle());
 }
 
@@ -50,18 +50,37 @@ export async function deleteAccount() {
 
 // ------------------------------------------------------------ discovery ---
 
-export async function getFeed(limit = 20): Promise<FeedBook[]> {
-  return unwrap(await supabase.rpc('get_feed', { p_limit: limit })) ?? [];
+/** Personalised deck; `genre` narrows it while browsing another genre. */
+export async function getFeed(limit = 20, genre: string | null = null): Promise<FeedBook[]> {
+  return unwrap(await supabase.rpc('get_feed', { p_limit: limit, p_genre: genre })) ?? [];
 }
 
-/** Records a swipe; resolves to the new match (if the swipe created one). */
-export async function swipe(book: FeedBook, liked: boolean) {
-  const rows = unwrap(await supabase.rpc('swipe', { p_book_id: book.id, p_liked: liked })) as
-    { match_id: string; other_name: string }[] | null;
-  const match = rows?.[0] ?? null;
-  analytics.track('book_swiped', { liked, book_id: book.id, genres: book.genres, nearby_likes: book.nearby_likes });
-  if (match) analytics.track('match_created', { book_id: book.id });
-  return match;
+/**
+ * Records a swipe (or a like from search). Resolves to every match it made:
+ * one like can match several nearby readers who loved the same book.
+ */
+export async function swipe(book: Pick<FeedBook, 'id' | 'genres' | 'nearby_likes'>, liked: boolean, source: 'deck' | 'search' = 'deck') {
+  const matches = (unwrap(await supabase.rpc('swipe', { p_book_id: book.id, p_liked: liked })) ?? []) as NewMatch[];
+  analytics.track('book_swiped', { liked, source, book_id: book.id, genres: book.genres, nearby_likes: book.nearby_likes });
+  if (matches.length) analytics.track('match_created', { book_id: book.id, count: matches.length, mode: matches[0].mode });
+  return matches;
+}
+
+/** Catalogue search by title or author (2+ characters). */
+export async function searchBooks(query: string): Promise<SearchBook[]> {
+  return unwrap(await supabase.rpc('search_books', { p_query: query, p_limit: 20 })) ?? [];
+}
+
+/** Adds an Open Library work to the catalogue so it can be liked; returns its id. */
+export async function addBook(b: SearchBook & { cover_id: number }): Promise<number> {
+  return unwrap(await supabase.rpc('add_book', {
+    p_ol_key: b.ol_key, p_title: b.title, p_author: b.author, p_cover_id: b.cover_id,
+    p_first_published: b.first_published, p_genres: b.genres,
+  })) as number;
+}
+
+export async function getNearbyReaders(): Promise<NearbyBucket> {
+  return unwrap(await supabase.rpc('nearby_readers')) as NearbyBucket;
 }
 
 // -------------------------------------------------------- matches & chat ---
@@ -94,7 +113,7 @@ export function subscribeToMessages(matchId: string, onMessage: (m: Message) => 
   return () => { supabase.removeChannel(channel); };
 }
 
-/** Fires whenever the user gets a new match (to refresh lists / badges). */
+/** Fires on any change to the user's matches or a new message in them (lists, badges). */
 export function subscribeToMatches(onChange: () => void) {
   const channel = supabase
     .channel('my-matches')
@@ -106,18 +125,20 @@ export function subscribeToMatches(onChange: () => void) {
 
 // ---------------------------------------------------------------- safety ---
 
+/**
+ * Removes the person for good (a silent block: you never match again, on any
+ * book) and deletes the chat for both. Your like on the book stays, so it can
+ * still match you with other readers.
+ */
 export async function unmatch(matchId: string) {
-  unwrap(await supabase.from('matches').delete().eq('id', matchId));
+  unwrap(await supabase.rpc('unmatch', { p_match_id: matchId }));
   analytics.track('unmatched');
 }
 
-export async function blockUser(userId: string) {
-  unwrap(await supabase.rpc('block_user', { p_user_id: userId }));
-  analytics.track('user_blocked');
-}
-
-export async function reportUser(userId: string, reason: ReportReason, details?: string) {
+/** Files a report for the safety team, then unmatches (same rules as above). */
+export async function reportAndUnmatch(match: { match_id: string; other_id: string }, reason: ReportReason, details?: string) {
   const reporter_id = await uid();
-  unwrap(await supabase.from('reports').insert({ reporter_id, reported_id: userId, reason, details }));
-  analytics.track('user_reported', { reason });
+  unwrap(await supabase.from('reports').insert({ reporter_id, reported_id: match.other_id, reason, details: details?.trim() || null }));
+  analytics.track('user_reported', { reason, with_details: !!details?.trim() });
+  await unmatch(match.match_id);
 }

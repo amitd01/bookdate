@@ -19,6 +19,9 @@ create function pg_temp.as_user(c text) returns void language sql as
   $$ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000' || c, false) $$;
 create function pg_temp.check(ok boolean, what text) returns void language plpgsql as
   $$ begin if not coalesce(ok, false) then raise exception 'FAILED: %', what; end if; raise notice 'ok  %', what; end $$;
+-- True when the statement raises an error.
+create function pg_temp.raises(stmt text) returns boolean language plpgsql as
+  $$ begin execute stmt; return false; exception when others then return true; end $$;
 
 set role authenticated;
 select pg_temp.as_user('a'); select update_location(12.9716, 77.5946);
@@ -57,12 +60,50 @@ select pg_temp.check(is_compatible(a, b), 'distance: up to 10 miles (16.1 km) al
   from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
 set role authenticated;
 
+-- Search, genre browsing, adding Open Library books, birthday lock, nearby chip.
+select pg_temp.as_user('a');
+select pg_temp.check((select liked from search_books('hobb')) and (select count(*) from search_books('hobb')) = 1, 'search finds a book by title and shows it as liked');
+select pg_temp.check((select count(*) from search_books('tolkien')) = 1, 'search matches author');
+select pg_temp.check((select count(*) from search_books('h')) = 0, 'search ignores one-letter queries');
+select pg_temp.check((select bool_and('thriller' = any (genres)) and count(*) = 1 from get_feed(10, 'thriller')), 'genre browsing filters the feed');
+select add_book('/works/OL1W', 'Tomb of Sand', 'Geetanjali Shree', 123, 2018, '{literary_fiction,"Bad!"}');
+select pg_temp.check((select cover_url from books where ol_key = '/works/OL1W') = 'https://covers.openlibrary.org/b/id/123-L.jpg', 'add_book builds the cover URL server-side');
+select pg_temp.check((select genres from books where ol_key = '/works/OL1W') = '{literary_fiction}', 'add_book drops invalid genres');
+select pg_temp.check(add_book('/works/OL1W', 'Again', null, 1, null, '{}') = (select id from books where ol_key = '/works/OL1W'), 'add_book is idempotent');
+select pg_temp.check(pg_temp.raises($$select add_book('javascript:x', 'X', null, 1, null, '{}')$$), 'add_book rejects bad keys');
+select pg_temp.check(pg_temp.raises($$update profiles set birthdate = '1990-01-01' where id = auth.uid()$$), 'birthday is locked after onboarding');
+select pg_temp.check(nearby_readers() = 'few', 'nearby chip shows a bucket, not a count');
+
+-- Friends mode: Esha (woman, friends) near Asha. Asha passes Gone Girl, switches
+-- to friends, then likes it from search: they match as book buddies.
+reset role;
+insert into auth.users (id) values ('00000000-0000-0000-0000-00000000000e');
+insert into profiles (id, display_name, birthdate, gender, interested_in, genres, looking_for)
+  values ('00000000-0000-0000-0000-00000000000e', 'Esha', '1994-01-01', 'woman', '{man}', '{thriller,romance,classics}', 'friends');
+set role authenticated;
+select pg_temp.as_user('e'); select update_location(12.9750, 77.5960); select swipe(2, true); select swipe(3, true);
+select pg_temp.as_user('a'); select swipe(2, false);
+update profiles set looking_for = 'friends' where id = auth.uid();
+select pg_temp.check((select mode = 'friends' and other_name = 'Esha' from swipe(2, true)), 'friends mode ignores gender; re-liking a passed book matches');
+select pg_temp.check((select count(*) from swipe(3, true)) = 0, 'one match per pair');
+select pg_temp.check((select array_agg(mode order by mode) from get_matches()) = '{dating,friends}', 'switching modes keeps existing matches, tagged');
+select unmatch((select match_id from get_matches() where mode = 'friends'));
+select pg_temp.check((select count(*) from get_matches()) = 1, 'unmatch removes the person');
+select pg_temp.check((select liked from swipes where book_id = 2), 'unmatch keeps your like on the book');
+reset role;
+select pg_temp.check(not is_compatible(a, e), 'unmatched readers never match again')
+  from profiles a, profiles e where a.display_name = 'Asha' and e.display_name = 'Esha';
+select pg_temp.check(not is_compatible(a, b), 'dating and friends readers never match')
+  from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
+set role authenticated;
+
 select pg_temp.as_user('b');
 select block_user('00000000-0000-0000-0000-00000000000a');
 select pg_temp.check((select count(*) from get_matches()) = 0, 'blocking removes the match');
 select delete_account();
 
 reset role;
-select pg_temp.check((select count(*) from profiles) = 3, 'delete_account cascades');
-select pg_temp.check((select count(*) from net.sent) = 3, 'push sent for match (x2) and message (x1)');
+select pg_temp.check((select count(*) from profiles) = 4, 'delete_account cascades');
+select pg_temp.check((select count(*) from net.sent) = 4, 'push sent for matches and messages (Esha has no push token)');
+select pg_temp.check((select count(*) from net.sent where body->>'title' like 'You found a book buddy%') = 1, 'friends matches use book-buddy push copy');
 select pg_temp.check((select count(*) from analytics_daily) = 30, 'analytics view has 30 days');

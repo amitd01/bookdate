@@ -61,3 +61,9 @@ Without B the app works fine — Android users just don't get push notifications
 4. **Store listing:** reuse the copy in `docs/APP_STORE.md` §8. Graphics: 512×512 icon (`assets/images/icon.png` resized), 1024×500 feature graphic, ≥2 phone screenshots.
 5. **First upload is manual:** *Test and release → Testing → Internal testing → Create release* → upload the `.aab` from step C2 (download from the EAS build page). After that, `npm run submit:android` works once you add a Play **service account** JSON as `./google-play-service-account.json` ([Expo guide](https://expo.fyi/creating-google-service-account)).
 6. **New personal developer accounts:** Google requires a **closed test with at least 12 testers opted in for 14 consecutive days** before you can apply for production. Start the closed test early.
+
+## E. Release notes — version 1.1
+
+```
+Friends mode, book search, genre browsing, a distance slider (15 km / 10 mi), a new match screen with opening moves, unread dots and a safer chat.
+```

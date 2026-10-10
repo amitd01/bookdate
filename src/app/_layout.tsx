@@ -1,6 +1,7 @@
 /**
  * Root navigator. Access is decided by auth state via Stack.Protected:
  * signed out → sign-in · no profile yet → onboarding · otherwise → app.
+ * Signed-in, onboarded readers get the shared inbox (matches + unread).
  */
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -10,6 +11,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 import { colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
+import { InboxProvider } from '@/lib/inbox';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -21,7 +23,7 @@ function RootNavigator() {
   }, [ready]);
   if (!ready) return null;
 
-  return (
+  const stack = (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper },
       headerTintColor: colors.accent, headerStyle: { backgroundColor: colors.paper }, headerShadowVisible: false }}>
       <Stack.Protected guard={!session}>
@@ -32,11 +34,13 @@ function RootNavigator() {
       </Stack.Protected>
       <Stack.Protected guard={!!session && !!profile}>
         <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: '', headerBackTitle: 'Matches' }} />
+        <Stack.Screen name="chat/[id]" options={{ headerShown: true, title: '', headerBackTitle: 'Book Dates' }} />
+        <Stack.Screen name="search" options={{ headerShown: true, title: 'Search', headerBackTitle: 'Discover' }} />
         <Stack.Screen name="edit-profile" options={{ headerShown: true, title: 'Edit profile', presentation: 'modal' }} />
       </Stack.Protected>
     </Stack>
   );
+  return session && profile ? <InboxProvider userId={session.user.id}>{stack}</InboxProvider> : stack;
 }
 
 export default function RootLayout() {

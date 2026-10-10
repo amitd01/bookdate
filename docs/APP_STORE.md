@@ -88,8 +88,8 @@ No tracking → no App Tracking Transparency prompt.
 > BookDate matches readers who like the same book cover and live near each other (each reader picks a distance of up to 15 km or 10 miles).
 > Demo login (email/password on the sign-in screen): reviewer@bookdate.app / <password>.
 > The account already has one match ("Demo Reader (test account)") with a message. Swiping right on
-> covers labelled "❤️ 1 reader near you loved this" creates a new match instantly while you are near
-> Cupertino. Safety tools: open a chat → "•••" → Report / Block / Unmatch. Account deletion: Profile → Delete account.
+> covers labelled "1 reader near you loved this" creates a new match instantly while you are near
+> Cupertino. Safety tools: open a chat → shield icon (top right) → Safety tips / Report / Unmatch & block. Account deletion: Profile → Delete account.
 > Location is used only while the app is open to find readers nearby; exact coordinates are never shown.
 
 ## 8. Store listing copy (edit freely)
@@ -107,3 +107,15 @@ No tracking → no App Tracking Transparency prompt.
   • Always local: choose up to 15 km or 10 miles
   • Safe by design: no photos, report & block in every chat, exact location never shared
 - **Screenshots:** 6.9" iPhone required (1320×2868). Capture Discover, match screen, chat, onboarding genres, profile from the TestFlight build.
+
+## 9. What's New — version 1.1
+
+```
+• Just meeting people: a new friends mode alongside dating
+• Search for a book you love and like it straight from the results
+• Browse covers from any genre without changing your profile
+• Choose how far to look: up to 15 km or 10 miles
+• See every reader you matched with, and send an opening move
+• Unread dots, timestamps and a clearer, safer chat
+• Easier to read and use with VoiceOver and larger text
+```

@@ -7,7 +7,7 @@ permalink: /privacy/
 
 **Effective date:** 10 October 2026
 
-BookDate ("**BookDate**", "**we**", "**us**") is a mobile app that helps adults meet nearby people who love the same books. BookDate is operated by the developer named as the seller on BookDate's App Store listing, based in India. This policy explains what personal data we collect, why, who we share it with, and the choices and rights you have. It is written to meet India's **Digital Personal Data Protection Act, 2023 (DPDP Act)** and the **Information Technology Act, 2000** and its rules, and also the EU/UK **GDPR**, the California **CCPA/CPRA**, and similar laws that may apply to you.
+BookDate ("**BookDate**", "**we**", "**us**") is a mobile app that helps adults meet nearby people who love the same books, for dating or for friendship. BookDate is operated by the developer named as the seller on BookDate's App Store listing, based in India. This policy explains what personal data we collect, why, who we share it with, and the choices and rights you have. It is written to meet India's **Digital Personal Data Protection Act, 2023 (DPDP Act)** and the **Information Technology Act, 2000** and its rules, and also the EU/UK **GDPR**, the California **CCPA/CPRA**, and similar laws that may apply to you.
 
 **Contact / Grievance Officer:** [amitdas+bookdatesupport@gmail.com](mailto:amitdas+bookdatesupport@gmail.com)
 
@@ -22,9 +22,9 @@ BookDate is for adults **18 years and older** only. We do not knowingly collect 
 | Category | What | Source |
 |---|---|---|
 | **Account** | Email address (or an Apple "Hide My Email" relay address), internal user ID, sign-in method; if you use Google sign-in, your Google account email and first name | You / Apple / Google |
-| **Profile** | First name, date of birth (used to confirm you are 18+ and to show your age), gender, the genders and age range you'd like to meet, favourite genres, optional bio | You |
+| **Profile** | First name, date of birth (used to confirm you are 18+ and to show your age), gender, whether you're here for dating or friends, the genders (dating only), age range and distance you'd like to meet, favourite genres, optional bio | You |
 | **Approximate location** | Your device location while the app is open, **rounded to about 100 metres** before it is stored | Your device, with your permission |
-| **Activity** | Books you swipe on (like/pass), your matches, messages you send and receive, blocks and reports | Your use of the app |
+| **Activity** | Books you swipe on or like from search (like/pass), books you add from Open Library, your matches, messages you send and receive, unmatches, blocks and reports | Your use of the app |
 | **Device & notifications** | Push-notification token, app version, device model and OS version | Your device |
 | **Product analytics** | In-app events (for example "book swiped", "message sent") linked to your user ID | Your use of the app |
 
@@ -62,7 +62,9 @@ We do **not sell** or rent your personal data and we do not share it for adverti
 
 We may also disclose data if required by law, a court order or a government authority, or to protect the safety of any person.
 
-Book covers are loaded from **Open Library** (Internet Archive); no personal data is sent to them beyond what any website receives when an image is requested (such as your IP address).
+Book covers are loaded from **Open Library** (Internet Archive), and when you search for a book the words you type are sent from your device to Open Library's search service. No account or profile data is sent to them; like any website, they receive your IP address with each request.
+
+Some settings stay **only on your device** and are never sent to us: which chats you've read (for unread dots), hints you've dismissed, and the genre you're browsing.
 
 ## 6. International transfers
 

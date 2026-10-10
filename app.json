@@ -2,7 +2,7 @@
   "expo": {
     "name": "BookDate",
     "slug": "bookdate",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bookdate",
@@ -73,7 +73,7 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "BookDate uses your location to match you with readers less than 15 km away. Your exact location is never shown to anyone.",
+          "locationWhenInUsePermission": "BookDate uses your location to match you with readers near you (up to 15 km or 10 miles). Your exact location is never shown to anyone.",
           "locationAlwaysAndWhenInUsePermission": false,
           "locationAlwaysPermission": false,
           "motionUsagePermission": "BookDate does not use your motion or fitness activity. This permission is never requested."
@@ -88,7 +88,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FBF6EE",
+          "backgroundColor": "#FAF5EC",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 160
         }
@@ -104,6 +104,12 @@
       },
       "router": {}
     },
-    "owner": "amitd01"
+    "owner": "amitd01",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/4e76330a-3b55-4e9c-8877-008da253ec62"
+    }
   }
 }
