@@ -20,7 +20,7 @@ Status: ✅ done (on `main` or in an open PR) · 🔧 to do · ⚙️ config (Su
 | — | Over-the-air updates (`expo-updates`) so JS fixes ship without a rebuild | ❓ |
 | — | **Android app + Google sign-in** (cross-platform action sheet, Android date picker, Material icons, FCM push, Play docs) | ✅ #3 |
 | 6 | Android: keyboard could cover inputs under edge-to-edge (Android 15+) | `KeyboardAvoidingView` uses `padding` on both platforms (#3) | ✅ |
-| 7 | Discover: "❤️ n readers near you" counts are fetched when the deck loads and never refresh, so likes made after that don't show until the app restarts | Re-fetch the deck (not just append) on focus/pull-to-refresh, and add pull-to-refresh to Discover | 🔧 |
+| 7 | Discover: "❤️ n readers near you" counts are fetched when the deck loads and never refresh, so likes made after that don't show until the app restarts | Deck re-ranks on focus and app foreground (keeps the visible card); top-ups also refresh counts on cards already loaded | ✅ PR |
 
 ## Release status
 
