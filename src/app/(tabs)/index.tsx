@@ -12,7 +12,6 @@ import { ActivityIndicator, AppState, Linking, Modal, Pressable, StyleSheet, Tex
 import { BookCover } from '@/components/BookCover';
 import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard';
 import { Button, EmptyState } from '@/components/ui';
-import { RADIUS_KM } from '@/constants/genres';
 import { colors, radius, space, type } from '@/constants/theme';
 import { getFeed, swipe } from '@/lib/api';
 import { syncLocation, type LocationState } from '@/lib/location';
@@ -86,7 +85,7 @@ export default function Discover() {
   if (loc === 'denied') {
     return (
       <EmptyState emoji="📍" title="Location needed"
-        body={`BookDate only matches readers within ${RADIUS_KM} km. Allow location access so we can find book lovers near you.`}>
+        body="BookDate only matches readers close to you (15 km or 10 miles at most). Allow location access so we can find book lovers near you.">
         <Button title="Open Settings" onPress={() => Linking.openSettings()} />
       </EmptyState>
     );

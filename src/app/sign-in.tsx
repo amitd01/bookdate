@@ -13,6 +13,7 @@ import { Button, Field } from '@/components/ui';
 import { colors, keyboardBehavior, space, type } from '@/constants/theme';
 import { googleEnabled, useAuth } from '@/lib/auth';
 import { config } from '@/lib/config';
+import { errorMessage } from '@/lib/errors';
 
 export default function SignIn() {
   const { signInWithApple, signInWithGoogle, signInWithEmail, resendEmailCode } = useAuth();
@@ -28,7 +29,7 @@ export default function SignIn() {
       await signInWithApple();
     } catch (e: unknown) {
       // User closing the Apple sheet is not an error worth showing.
-      if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') Alert.alert('Sign in failed', String((e as Error).message));
+      if ((e as { code?: string }).code !== 'ERR_REQUEST_CANCELED') Alert.alert('Sign in failed', errorMessage(e));
     }
   };
 
@@ -36,7 +37,7 @@ export default function SignIn() {
     try {
       await signInWithGoogle();
     } catch (e) {
-      Alert.alert('Google sign in failed', (e as Error).message);
+      Alert.alert('Google sign in failed', errorMessage(e));
     }
   };
 
@@ -50,7 +51,7 @@ export default function SignIn() {
         setPendingEmail(email.trim());
       }
     } catch (e) {
-      Alert.alert(create ? 'Sign up failed' : 'Sign in failed', (e as Error).message);
+      Alert.alert(create ? 'Sign up failed' : 'Sign in failed', errorMessage(e));
     } finally {
       setBusy(false);
     }
@@ -128,7 +129,7 @@ function ConfirmCode({ email, onBack }: { email: string; onBack: () => void }) {
     try {
       await verifyEmailCode(email, code); // success signs in → onboarding
     } catch (e) {
-      Alert.alert('That code didn\'t work', `${(e as Error).message}\n\nCheck the latest email, or resend a new code.`);
+      Alert.alert('That code didn\'t work', `${errorMessage(e)}\n\nCheck the latest email, or resend a new code.`);
       setBusy(false);
     }
   };
@@ -139,7 +140,7 @@ function ConfirmCode({ email, onBack }: { email: string; onBack: () => void }) {
       setCooldown(RESEND_SECONDS);
       Alert.alert('Code sent', `A new code is on its way to ${email}.`);
     } catch (e) {
-      Alert.alert('Could not resend', (e as Error).message);
+      Alert.alert('Could not resend', errorMessage(e));
     }
   };
 

@@ -24,7 +24,7 @@ async function uid() {
 export async function getMyProfile(): Promise<Profile | null> {
   const id = await uid();
   return unwrap(await supabase.from('profiles')
-    .select('id,display_name,birthdate,gender,interested_in,age_min,age_max,genres,bio')
+    .select('id,display_name,birthdate,gender,interested_in,age_min,age_max,max_km,distance_unit,genres,bio')
     .eq('id', id).maybeSingle());
 }
 

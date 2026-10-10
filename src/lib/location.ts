@@ -1,7 +1,7 @@
 /**
  * Location is what makes a "book date" local: it is refreshed on every app
- * foreground and stored server-side rounded to ~100 m. The discovery radius
- * is fixed at 15 km (RADIUS_KM) and is not user-configurable.
+ * foreground and stored server-side rounded to ~100 m. Each reader picks a
+ * match distance (profiles.max_km, at most 15 km or 10 miles).
  */
 import * as Location from 'expo-location';
 

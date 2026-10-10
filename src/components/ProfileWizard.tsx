@@ -10,16 +10,20 @@ import { useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button, Chip, ChipGroup, Field, Label, Stepper } from '@/components/ui';
-import { GENDERS, GENRES, RADIUS_KM, type Gender } from '@/constants/genres';
-import { colors, keyboardBehavior, space, type } from '@/constants/theme';
+import { Slider } from '@/components/Slider';
+import { Button, Chip, ChipGroup, Field, Label } from '@/components/ui';
+import { DISTANCE_MAX, defaultUnit, formatDistance, toKm, toUnit, type DistanceUnit } from '@/constants/distance';
+import { GENDERS, GENRES, type Gender } from '@/constants/genres';
+import { colors, keyboardBehavior, radius, space, type } from '@/constants/theme';
 import { config } from '@/lib/config';
+import { errorMessage } from '@/lib/errors';
 import type { ProfileInput } from '@/lib/types';
 
 const MIN_GENRES = 3;
 const toISODate = (d: Date) => d.toISOString().slice(0, 10);
 const yearsAgo = (n: number) => { const d = new Date(); d.setFullYear(d.getFullYear() - n); return d; };
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
+const UNITS: { value: DistanceUnit; label: string }[] = [{ value: 'km', label: 'Kilometres' }, { value: 'mi', label: 'Miles' }];
 
 type Props = {
   mode: 'onboarding' | 'edit';
@@ -30,13 +34,14 @@ type Props = {
 export function ProfileWizard({ mode, initial, onSubmit }: Props) {
   const [p, setP] = useState<ProfileInput>({
     display_name: '', birthdate: toISODate(yearsAgo(25)), gender: 'woman', interested_in: [],
-    age_min: 21, age_max: 45, genres: [], bio: '', ...initial,
+    age_min: 21, age_max: 45, max_km: 15, distance_unit: defaultUnit(), genres: [], bio: '', ...initial,
   });
   const [agreed, setAgreed] = useState(mode === 'edit');
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const set = (patch: Partial<ProfileInput>) => setP((cur) => ({ ...cur, ...patch }));
+  const unit = p.distance_unit;
 
   const sections: { title: string; subtitle: string; valid: boolean; body: ReactNode }[] = [
     {
@@ -70,7 +75,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
     },
     {
       title: 'Who would you like to meet?',
-      subtitle: `Book dates are always with readers less than ${RADIUS_KM} km from you.`,
+      subtitle: 'Matches go both ways: they fit your choices and you fit theirs.',
       valid: p.interested_in.length > 0 && p.age_min <= p.age_max,
       body: (
         <>
@@ -81,14 +86,31 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
                 onPress={() => set({ interested_in: toggle<Gender>(p.interested_in, g.value) })} />
             ))}
           </ChipGroup>
-          <Label>Age range</Label>
           <View style={s.row}>
-            <Stepper value={p.age_min} min={18} max={p.age_max} onChange={(n) => set({ age_min: n })} />
-            <Text style={type.small}>to</Text>
-            <Stepper value={p.age_max} min={p.age_min} max={99} onChange={(n) => set({ age_max: n })} />
+            <Label>Age range</Label>
+            <Text style={s.value}>{p.age_min} – {p.age_max}</Text>
           </View>
-          <Label>Distance</Label>
-          <Text style={type.body}>Within {RADIUS_KM} km — always local, so a coffee‑shop book club is easy.</Text>
+          <Slider values={[p.age_min, p.age_max]} min={18} max={99} labels={['Youngest age', 'Oldest age']}
+            describe={(v) => `${v} years`} onChange={([age_min, age_max]) => set({ age_min, age_max })} />
+          <View style={s.row}>
+            <Label>Distance</Label>
+            <Text style={s.value}>Up to {formatDistance(p.max_km, unit)}</Text>
+          </View>
+          <Slider values={[toUnit(p.max_km, unit)]} min={1} max={DISTANCE_MAX[unit]} labels={['Maximum distance']}
+            describe={(v) => `${v} ${unit === 'mi' ? 'miles' : 'kilometres'}`} onChange={([n]) => set({ max_km: toKm(n, unit) })} />
+          <View style={s.row}>
+            <Text style={[type.small, { flex: 1 }]}>Always local, so a coffee‑shop book club is easy.</Text>
+            {/* Switching units keeps roughly the same distance, rounded to a whole km / mile. */}
+            <View style={s.units} accessibilityRole="radiogroup">
+              {UNITS.map((u) => (
+                <Pressable key={u.value} hitSlop={8} accessibilityRole="radio" accessibilityLabel={u.label}
+                  accessibilityState={{ checked: unit === u.value }} style={[s.unit, unit === u.value && s.unitOn]}
+                  onPress={() => set({ distance_unit: u.value, max_km: toKm(toUnit(p.max_km, u.value), u.value) })}>
+                  <Text style={[s.unitText, unit === u.value && s.unitTextOn]}>{u.value}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
         </>
       ),
     },
@@ -140,7 +162,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
     try {
       await onSubmit({ ...p, display_name: p.display_name.trim(), bio: p.bio?.trim() || null });
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Something went wrong');
+      setError(errorMessage(e));
     } finally {
       setSaving(false);
     }
@@ -178,7 +200,13 @@ const s = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.paper },
   content: { padding: space(6), gap: space(8) },
   section: { gap: space(4) },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space(3) },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space(3) },
+  value: { ...type.body, fontWeight: '600' },
+  units: { flexDirection: 'row', borderWidth: 1, borderColor: colors.line, borderRadius: radius.pill, padding: 2 },
+  unit: { paddingHorizontal: space(3.5), paddingVertical: space(1.5), borderRadius: radius.pill },
+  unitOn: { backgroundColor: colors.accent },
+  unitText: { ...type.small, fontWeight: '600' },
+  unitTextOn: { color: '#fff' },
   bio: { minHeight: 96, textAlignVertical: 'top' },
   dateButton: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: 14, padding: space(3.5) },
   agree: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start' },

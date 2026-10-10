@@ -15,6 +15,7 @@ import { colors, keyboardBehavior, radius, space, type } from '@/constants/theme
 import { analytics } from '@/lib/analytics';
 import { blockUser, getMatches, getMessages, reportUser, sendMessage, subscribeToMessages, unmatch } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { errorMessage } from '@/lib/errors';
 import type { Match, Message, ReportReason } from '@/lib/types';
 
 const PROMPTS = [
@@ -59,7 +60,7 @@ export default function Chat() {
       setMessages((cur) => (cur.some((c) => c.id === msg.id) ? cur : [...cur, msg]));
       setDraft('');
     } catch (e) {
-      Alert.alert('Message not sent', (e as Error).message);
+      Alert.alert('Message not sent', errorMessage(e));
     } finally {
       setSending(false);
     }

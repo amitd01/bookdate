@@ -32,7 +32,7 @@ select pg_temp.as_user('b'); select swipe(1, true); select swipe(2, false);
 
 select pg_temp.as_user('a');
 select pg_temp.check((select title from get_feed(10) limit 1) = 'The Hobbit', 'feed ranks nearby-liked book first');
-select pg_temp.check((select nearby_likes from get_feed(10) where title = 'The Hobbit') = 1, 'nearby_likes counts only compatible readers within 15 km');
+select pg_temp.check((select nearby_likes from get_feed(10) where title = 'The Hobbit') = 1, 'nearby_likes counts only compatible readers in range');
 select pg_temp.check((select count(*) from profiles) = 1, 'RLS: profiles only exposes own row');
 select pg_temp.check((select bio from profiles) = 'I love **** books', 'profanity masked in bio');
 select pg_temp.check((select other_name from swipe(1, true)) = 'Ben', 'right swipe matches compatible nearby reader');
@@ -45,6 +45,17 @@ select pg_temp.check((select body from messages) like 'What the **** %', 'profan
 select pg_temp.as_user('c');
 select pg_temp.check((select count(*) from messages) = 0, 'RLS: outsiders cannot read a match chat');
 select pg_temp.check((select count(*) from get_matches()) = 0, 'outsiders see no matches');
+
+-- Distance preference: Asha (~2 km from Ben) narrows to 1 km, so they no longer fit.
+select pg_temp.as_user('a');
+update profiles set max_km = 1 where id = auth.uid();
+reset role;
+select pg_temp.check(not is_compatible(a, b), 'distance: the smaller of the two choices applies')
+  from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
+update profiles set max_km = 16.1 where display_name = 'Asha';
+select pg_temp.check(is_compatible(a, b), 'distance: up to 10 miles (16.1 km) allowed')
+  from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
+set role authenticated;
 
 select pg_temp.as_user('b');
 select block_user('00000000-0000-0000-0000-00000000000a');

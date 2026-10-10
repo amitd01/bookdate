@@ -1,6 +1,6 @@
 # BookDate 📚❤️
 
-**Tinder for book lovers.** Swipe right or left on book *covers*. When a reader less than 15 km away
+**Tinder for book lovers.** Swipe right or left on book *covers*. When a nearby reader (you choose: up to 15 km or 10 miles)
 loves the same book, it's a match — and your chat opens as a two-person book club about that book.
 
 iOS and Android app built with **Expo (React Native) + Supabase** from one codebase, built and submitted
@@ -14,7 +14,7 @@ to the App Store and Google Play from any machine (no Mac required) through **EA
 |---|---|
 | **Onboarding** | Sign in with Apple (iOS), Google, or email → name, birthday (18+ gate), gender → who to meet (genders, age range) → ≥3 favourite genres → optional bio + community rules → location & push permissions |
 | **Discover** | Gesture swipe deck of covers (drag, fling, or ✕/♥ buttons), haptics, "❤️ 3 readers near you loved this" hints, "It's a book date!" match celebration |
-| **Matching** | Mutual right-swipe on the same book **+** both within **15 km (fixed)** **+** each fits the other's gender & age preferences **+** no block either way |
+| **Matching** | Mutual right-swipe on the same book **+** within **both readers' chosen distance** (1–15 km or 1–10 mi; the smaller applies) **+** each fits the other's gender & age preferences **+** no block either way |
 | **Book club chat** | Realtime 1:1 chat headed by the shared book and partner's reading profile, discussion-prompt chips, push notifications for matches & messages |
 | **Personalisation** | Server-side feed ranking: chosen genres + learned genre affinity from swipes + nearby social proof + popularity + exploration |
 | **Profile** | View/edit profile & preferences, legal links, support, sign out, **in-app account deletion** |
@@ -44,7 +44,7 @@ person"). Readers see name, age, bio and genres only. This also keeps UGC modera
 **Why this stack**
 
 - **Expo + EAS** — one TypeScript codebase, native iOS UI, cloud builds/signing/submission (works from Linux/Windows), OTA updates via `eas update`.
-- **Supabase** — Postgres with **PostGIS** makes the 15 km rule a single indexed `ST_DWithin`; Auth has native Sign in with Apple; Realtime streams chat; RLS keeps the client thin and secure. Scales vertically a long way and all logic is portable SQL.
+- **Supabase** — Postgres with **PostGIS** makes the distance rule a single indexed `ST_DWithin`; Auth has native Sign in with Apple; Realtime streams chat; RLS keeps the client thin and secure. Scales vertically a long way and all logic is portable SQL.
 - **Open Library** — free, key-less catalogue and cover images across every genre.
 - **PostHog** — product analytics without IDFA (no App Tracking Transparency prompt needed). Optional.
 - **Push from Postgres** — triggers call Expo's push API via `pg_net`; no extra servers or edge functions to operate.
@@ -141,7 +141,7 @@ Server KPIs (SQL editor / service role): `select * from analytics_daily;` and `s
 ```
 score = 2.0 × |book genres ∩ my genres|
       + Σ learned affinity of the book's genres   (my likes +1, passes −0.5, averaged per genre)
-      + 3.0 × ln(1 + compatible readers within 15 km who liked it)   ← raises match odds
+      + 3.0 × ln(1 + compatible readers in range who liked it)   ← raises match odds
       + 0.3 × ln(1 + global likes)
       + random(0‥1.5)                                                ← exploration
 ```
