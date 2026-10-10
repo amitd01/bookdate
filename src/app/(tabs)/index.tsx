@@ -93,6 +93,8 @@ export default function Discover() {
 
   const browse = (g: string | null) => {
     if (g === genre) return;
+    latest.current++; // drop any in-flight load for the old genre
+    fetching.current = false;
     setDeck([]);
     setLoading(true);
     setGenre(g); // the focus effect re-runs and loads the new genre

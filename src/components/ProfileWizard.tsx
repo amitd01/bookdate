@@ -24,6 +24,7 @@ import { config } from '@/lib/config';
 import { errorMessage } from '@/lib/errors';
 import { requestLocationPermission } from '@/lib/location';
 import { requestPushPermission } from '@/lib/push';
+import { ageOf, fromISODate, toISODate } from '@/lib/time';
 import type { ProfileInput } from '@/lib/types';
 
 const MIN_GENRES = 3;
@@ -36,11 +37,10 @@ const RULES = [
   'Report anything that feels off. Reported readers are removed.',
 ];
 
-const toISODate = (d: Date) => d.toISOString().slice(0, 10);
-const yearsAgo = (n: number) => { const d = new Date(); d.setFullYear(d.getFullYear() - n); return d; };
-const ageOf = (iso: string) => Math.floor((Date.now() - new Date(iso).getTime()) / 31_557_600_000);
+
+const yearsAgo = (n: number) => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setFullYear(d.getFullYear() - n); return d; };
 const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v]);
-const prettyDate = (iso: string) => new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
+const prettyDate = (iso: string) => fromISODate(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' });
 
 /** Form state: gender, birthday and mode start empty until the reader picks them. */
 type Draft = Omit<ProfileInput, 'gender' | 'birthdate' | 'looking_for'> & { gender: Gender | null; birthdate: string | null; looking_for: LookingFor | null };
@@ -79,12 +79,12 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
 
   const pickBirthday = (d: Date) => set({ birthdate: toISODate(d) });
   const birthdayPicker = Platform.OS === 'ios' ? (
-    <DateTimePicker value={new Date(p.birthdate ?? toISODate(yearsAgo(25)))} mode="date" display="spinner"
+    <DateTimePicker value={p.birthdate ? fromISODate(p.birthdate) : yearsAgo(25)} mode="date" display="spinner"
       maximumDate={yearsAgo(18)} minimumDate={yearsAgo(100)} onChange={(_, d) => d && pickBirthday(d)} />
   ) : (
     // Android's picker is a dialog, so show the date (or a prompt) and open it on tap.
     <Pressable style={s.dateButton} accessibilityRole="button" onPress={() => DateTimePickerAndroid.open({
-      value: new Date(p.birthdate ?? toISODate(yearsAgo(25))), mode: 'date', maximumDate: yearsAgo(18), minimumDate: yearsAgo(100),
+      value: p.birthdate ? fromISODate(p.birthdate) : yearsAgo(25), mode: 'date', maximumDate: yearsAgo(18), minimumDate: yearsAgo(100),
       onChange: (e, d) => { if (e.type === 'set' && d) pickBirthday(d); },
     })}>
       <Text style={[type.body, !p.birthdate && { color: colors.ink3 }]}>{p.birthdate ? prettyDate(p.birthdate) : 'Choose your birthday'}</Text>

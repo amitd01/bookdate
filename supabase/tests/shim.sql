@@ -15,3 +15,17 @@ create schema net;
 create table net.sent (url text, body jsonb);
 create function net.http_post(url text, headers jsonb, body jsonb) returns bigint
   language sql as $$ insert into net.sent values (url, body); select 1::bigint $$;
+-- Supabase grants new public functions to API roles by default; mirror it so
+-- tests catch functions that must be revoked explicitly.
+alter default privileges in schema public grant execute on functions to anon, authenticated;
+-- pgsql-http stub: canned Open Library responses for add_book.
+create type extensions.http_response as (status int, content_type text, headers jsonb, content text);
+create function extensions.http_set_curlopt(opt text, val text) returns boolean language sql as $$ select true $$;
+create function extensions.http_get(uri text) returns extensions.http_response language sql as $$
+  select case uri
+    when 'https://openlibrary.org/works/OL1W.json' then
+      row(200, 'application/json', null, '{"title": "Tomb of Sand", "covers": [123], "first_publish_date": "2018", "authors": [{"author": {"key": "/authors/OL1A"}}]}')::extensions.http_response
+    when 'https://openlibrary.org/authors/OL1A.json' then
+      row(200, 'application/json', null, '{"name": "Geetanjali Shree"}')::extensions.http_response
+    else row(404, 'application/json', null, '{}')::extensions.http_response
+  end $$;

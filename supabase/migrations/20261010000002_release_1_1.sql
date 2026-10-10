@@ -6,13 +6,18 @@
 --     keeps existing matches, tagged.
 --   * Genre browsing: get_feed(p_limit, p_genre).
 --   * Book search: search_books() over the catalogue, add_book() to pull a
---     book in from Open Library so it can be liked.
+--     book in from Open Library so it can be liked. The database fetches the
+--     work from Open Library itself, so readers can't inject titles or covers;
+--     reader-added books are searchable but never pushed into Discover.
 --   * Unmatch is permanent (blocks silently) but keeps your like on the book.
 --   * Birthday is locked after onboarding.
 --   * nearby_readers(): honest, bucketed count of compatible readers nearby.
+--   * update_location() is throttled (one move per 2 minutes) so spoofed
+--     locations can't be used to triangulate other readers.
 -- =============================================================================
 
 create extension if not exists pg_trgm with schema extensions;
+create extension if not exists http with schema extensions;  -- synchronous HTTP for add_book
 
 -- ------------------------------------------------------------- columns ------
 
@@ -21,6 +26,11 @@ alter table public.profiles
 
 alter table public.matches
   add column mode text not null default 'dating' check (mode in ('dating', 'friends'));
+
+-- Where a book came from: the seeded catalogue, or a reader's search.
+alter table public.books
+  add column source   text not null default 'catalogue' check (source in ('catalogue', 'user')),
+  add column added_by uuid references public.profiles (id) on delete set null;
 
 -- Fast "contains" search on title + author (trigram index, scales past the seed catalogue).
 create index books_search_idx on public.books
@@ -127,6 +137,7 @@ language sql stable security definer set search_path = public, extensions as $$
   left join nearby_likes nl on nl.book_id = b.id
   where not exists (select 1 from swipes s where s.user_id = auth.uid() and s.book_id = b.id)
     and (p_genre is null or p_genre = any (b.genres))
+    and b.source = 'catalogue'                       -- reader-added books stay out of Discover
   order by
       2.0 * cardinality(array(select unnest(b.genres) intersect select unnest(me.genres)))
     + coalesce((select sum(a.score) from affinity a where a.g = any (b.genres)), 0)
@@ -164,22 +175,43 @@ language sql stable security definer set search_path = public, extensions as $$
 $$;
 
 -- Adds an Open Library work to the catalogue (found via in-app search) and
--- returns its id. Inputs are validated; the cover URL is built server-side.
-create or replace function public.add_book(p_ol_key text, p_title text, p_author text, p_cover_id bigint,
-                                           p_first_published int, p_genres text[])
+-- returns its id. Only the work key comes from the app: title, author, cover
+-- and year are fetched from Open Library here, so nothing can be injected.
+-- Limited to 30 new books per reader per day.
+create or replace function public.add_book(p_ol_key text, p_genres text[] default '{}')
 returns bigint
-language plpgsql security definer set search_path = public as $$
-declare v_id bigint;
+language plpgsql security definer set search_path = public, extensions as $$
+declare
+  v_id bigint;
+  res  extensions.http_response;
+  work jsonb;
+  v_author text;
+  v_cover bigint;
 begin
-  if p_ol_key !~ '^/works/OL[0-9]+W$' or char_length(trim(p_title)) not between 1 and 300
-     or p_cover_id is null or p_cover_id <= 0 then
-    raise exception 'Invalid book';
+  if p_ol_key !~ '^/works/OL[0-9]+W$' then raise exception 'Invalid book'; end if;
+  select id into v_id from books where ol_key = p_ol_key;
+  if v_id is not null then return v_id; end if;
+  if (select count(*) from books where added_by = auth.uid() and created_at > now() - interval '1 day') >= 30 then
+    raise exception 'You''ve added a lot of books today. Try again tomorrow.';
   end if;
-  insert into books (ol_key, title, author, cover_url, genres, first_published)
-  values (p_ol_key, trim(p_title), left(nullif(trim(p_author), ''), 200),
-          'https://covers.openlibrary.org/b/id/' || p_cover_id || '-L.jpg',
+
+  perform extensions.http_set_curlopt('CURLOPT_TIMEOUT_MS', '5000');
+  res := extensions.http_get('https://openlibrary.org' || p_ol_key || '.json');
+  if res.status <> 200 then raise exception 'Book not found on Open Library'; end if;
+  work := res.content::jsonb;
+  v_cover := nullif(work->'covers'->>0, '')::bigint;
+  if work->>'title' is null or v_cover is null or v_cover <= 0 then raise exception 'That book has no cover yet'; end if;
+
+  if work->'authors'->0->'author'->>'key' ~ '^/authors/OL[0-9]+A$' then
+    res := extensions.http_get('https://openlibrary.org' || (work->'authors'->0->'author'->>'key') || '.json');
+    if res.status = 200 then v_author := res.content::jsonb->>'name'; end if;
+  end if;
+
+  insert into books (ol_key, title, author, cover_url, genres, first_published, source, added_by)
+  values (p_ol_key, left(mask_profanity(work->>'title'), 300), left(mask_profanity(v_author), 200),
+          'https://covers.openlibrary.org/b/id/' || v_cover || '-L.jpg',
           coalesce((select array_agg(g) from unnest(p_genres[1:5]) g where g ~ '^[a-z_]{2,40}$'), '{}'),
-          p_first_published)
+          substring(work->>'first_publish_date' from '\d{4}')::int, 'user', auth.uid())
   on conflict (ol_key) do nothing
   returning id into v_id;
   return coalesce(v_id, (select id from books where ol_key = p_ol_key));
@@ -237,6 +269,31 @@ language sql security definer set search_path = public as $$
   from matches where id = p_match_id and auth.uid() in (user_a, user_b);
 $$;
 
+-- Report + unmatch in one transaction, so a retry can't file a duplicate report.
+create or replace function public.report_and_unmatch(p_match_id uuid, p_reason text, p_details text default null)
+returns void
+language plpgsql security definer set search_path = public as $$
+declare other uuid;
+begin
+  select case when user_a = auth.uid() then user_b else user_a end into other
+  from matches where id = p_match_id and auth.uid() in (user_a, user_b);
+  if other is null then raise exception 'Match not found'; end if;
+  insert into reports (reporter_id, reported_id, reason, details)
+  values (auth.uid(), other, p_reason, nullif(trim(p_details), ''));
+  perform unmatch(p_match_id);
+end $$;
+
+-- Location updates are throttled to one move per 2 minutes, so a spoofed
+-- location can't be swept around to triangulate other readers.
+create or replace function public.update_location(lat double precision, lng double precision) returns void
+language sql security definer set search_path = public, extensions as $$
+  update profiles
+     set location = st_setsrid(st_makepoint(round(lng::numeric, 3)::float8, round(lat::numeric, 3)::float8), 4326)::geography,
+         location_updated_at = now()
+   where id = auth.uid()
+     and (location is null or location_updated_at < now() - interval '2 minutes')
+$$;
+
 -- Honest density for the Discover chip. Only buckets leave the database, so
 -- small exact numbers never reveal individual readers. Counts compatible
 -- readers in range who opened the app in the last 30 days.
@@ -247,10 +304,11 @@ language sql stable security definer set search_path = public, extensions as $$
         where p.location_updated_at > now() - interval '30 days') c
 $$;
 
--- RPCs are for signed-in users only.
-revoke execute on function public.nearby_reader_ids, public.get_feed, public.search_books, public.add_book,
-  public.swipe, public.get_matches, public.unmatch, public.nearby_readers from public, anon;
-grant execute on function public.get_feed, public.search_books, public.add_book,
-  public.swipe, public.get_matches, public.unmatch, public.nearby_readers to authenticated;
--- nearby_reader_ids stays internal: the SECURITY DEFINER RPCs above call it as
--- their owner, so readers never get a list of nearby user ids.
+-- RPCs are for signed-in users only. nearby_reader_ids stays internal (Supabase
+-- grants new functions to authenticated by default, so revoke explicitly): the
+-- SECURITY DEFINER RPCs above call it as their owner.
+revoke execute on function public.nearby_reader_ids from public, anon, authenticated;
+revoke execute on function public.get_feed, public.search_books, public.add_book, public.swipe, public.get_matches,
+  public.unmatch, public.report_and_unmatch, public.nearby_readers from public, anon;
+grant execute on function public.get_feed, public.search_books, public.add_book, public.swipe, public.get_matches,
+  public.unmatch, public.report_and_unmatch, public.nearby_readers to authenticated;

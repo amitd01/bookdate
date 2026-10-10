@@ -7,8 +7,10 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import { Button, EmptyState } from '@/components/ui';
 import { colors } from '@/constants/theme';
 import { AuthProvider, useAuth } from '@/lib/auth';
 import { InboxProvider } from '@/lib/inbox';
@@ -16,12 +18,24 @@ import { InboxProvider } from '@/lib/inbox';
 SplashScreen.preventAutoHideAsync();
 
 function RootNavigator() {
-  const { ready, session, profile } = useAuth();
+  const { ready, session, profile, profileError, refreshProfile, signOut } = useAuth();
 
   useEffect(() => {
     if (ready) SplashScreen.hideAsync();
   }, [ready]);
   if (!ready) return null;
+
+  // Signed in but the profile couldn't be loaded: retry rather than guess "new reader".
+  if (session && !profile && profileError) {
+    return (
+      <View style={{ flex: 1, backgroundColor: colors.paper }}>
+        <EmptyState icon="books" title="Couldn't reach BookDate" body="Check your internet connection and try again.">
+          <Button title="Try again" onPress={() => refreshProfile().catch(() => undefined)} />
+          <Button title="Sign out" variant="ghost" onPress={signOut} />
+        </EmptyState>
+      </View>
+    );
+  }
 
   const stack = (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.paper },
@@ -40,7 +54,8 @@ function RootNavigator() {
       </Stack.Protected>
     </Stack>
   );
-  return session && profile ? <InboxProvider userId={session.user.id}>{stack}</InboxProvider> : stack;
+  // Always rendered (so the navigator never remounts); idle until there's an onboarded reader.
+  return <InboxProvider userId={session && profile ? session.user.id : null}>{stack}</InboxProvider>;
 }
 
 export default function RootLayout() {

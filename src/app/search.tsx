@@ -49,14 +49,14 @@ export default function Search() {
       setBusy(false);
       analytics.track('book_searched', { results: found.length });
     }, DEBOUNCE_MS);
-    return () => { clearTimeout(timer); ctrl.abort(); };
+    return () => { clearTimeout(timer); ctrl.abort(); setBusy(false); };
   }, [query]);
 
   const like = async (book: SearchBook) => {
     if (book.liked || liking) return;
     setLiking(book.ol_key);
     try {
-      const id = book.id ?? await addBook(book as SearchBook & { cover_id: number });
+      const id = book.id ?? await addBook(book);
       const matches = await swipe({ id, genres: book.genres, nearby_likes: book.nearby_likes }, true, 'search');
       const mark = (list: SearchBook[]) => list.map((b) => (b.ol_key === book.ol_key ? { ...b, id, liked: true } : b));
       setCatalogue(mark);

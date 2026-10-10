@@ -71,12 +71,13 @@ export async function searchBooks(query: string): Promise<SearchBook[]> {
   return unwrap(await supabase.rpc('search_books', { p_query: query, p_limit: 20 })) ?? [];
 }
 
-/** Adds an Open Library work to the catalogue so it can be liked; returns its id. */
-export async function addBook(b: SearchBook & { cover_id: number }): Promise<number> {
-  return unwrap(await supabase.rpc('add_book', {
-    p_ol_key: b.ol_key, p_title: b.title, p_author: b.author, p_cover_id: b.cover_id,
-    p_first_published: b.first_published, p_genres: b.genres,
-  })) as number;
+/**
+ * Adds an Open Library work to the catalogue so it can be liked; returns its id.
+ * Only the work key (and our genre guess) is sent: the server fetches the
+ * title, author and cover from Open Library itself.
+ */
+export async function addBook(b: Pick<SearchBook, 'ol_key' | 'genres'>): Promise<number> {
+  return unwrap(await supabase.rpc('add_book', { p_ol_key: b.ol_key, p_genres: b.genres })) as number;
 }
 
 export async function getNearbyReaders(): Promise<NearbyBucket> {
@@ -135,10 +136,8 @@ export async function unmatch(matchId: string) {
   analytics.track('unmatched');
 }
 
-/** Files a report for the safety team, then unmatches (same rules as above). */
-export async function reportAndUnmatch(match: { match_id: string; other_id: string }, reason: ReportReason, details?: string) {
-  const reporter_id = await uid();
-  unwrap(await supabase.from('reports').insert({ reporter_id, reported_id: match.other_id, reason, details: details?.trim() || null }));
+/** Files a report for the safety team and unmatches, in one step (same rules as above). */
+export async function reportAndUnmatch(matchId: string, reason: ReportReason, details?: string) {
+  unwrap(await supabase.rpc('report_and_unmatch', { p_match_id: matchId, p_reason: reason, p_details: details ?? null }));
   analytics.track('user_reported', { reason, with_details: !!details?.trim() });
-  await unmatch(match.match_id);
 }

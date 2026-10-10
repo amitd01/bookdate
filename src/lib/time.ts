@@ -27,3 +27,14 @@ export function formatDay(iso: string) {
 }
 
 export const sameDay = (a: string, b: string) => startOfDay(toMs(a)) === startOfDay(toMs(b));
+
+// Birthdays are calendar dates: format and parse them in local time (never via
+// UTC), or readers west of UTC would be saved a day off, and it's locked after.
+const pad = (n: number) => String(n).padStart(2, '0');
+export const toISODate = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+export const fromISODate = (iso: string) => { const [y, m, d] = iso.split('-').map(Number); return new Date(y, m - 1, d); };
+export function ageOf(iso: string) {
+  const b = fromISODate(iso);
+  const now = new Date();
+  return now.getFullYear() - b.getFullYear() - (now < new Date(now.getFullYear(), b.getMonth(), b.getDate()) ? 1 : 0);
+}

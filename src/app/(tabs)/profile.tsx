@@ -13,8 +13,8 @@ import { useAuth } from '@/lib/auth';
 import { config } from '@/lib/config';
 import { errorMessage } from '@/lib/errors';
 import { inviteFriend } from '@/lib/invite';
+import { ageOf } from '@/lib/time';
 
-const ageFrom = (birthdate: string) => Math.floor((Date.now() - new Date(birthdate).getTime()) / 31_557_600_000);
 const genderLabel = (g: string) => GENDERS.find((x) => x.value === g)?.label ?? g;
 const edit = () => router.push('/edit-profile');
 
@@ -37,7 +37,7 @@ export default function Profile() {
     <ScrollView style={{ backgroundColor: colors.sunken }} contentContainerStyle={s.content}>
       <View style={s.card}>
         <Avatar name={profile.display_name} size={72} />
-        <Text style={type.title}>{profile.display_name}, {ageFrom(profile.birthdate)}</Text>
+        <Text style={type.title}>{profile.display_name}, {ageOf(profile.birthdate)}</Text>
         <Tag label={mode.label} color={mode.color} background={mode.soft} />
         {profile.bio ? <Text style={s.bio}>“{profile.bio}”</Text> : null}
         <Text style={[type.small, { textAlign: 'center' }]}>{profile.genres.map(genreLabel).join(' · ')}</Text>

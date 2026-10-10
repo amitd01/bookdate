@@ -66,11 +66,20 @@ select pg_temp.check((select liked from search_books('hobb')) and (select count(
 select pg_temp.check((select count(*) from search_books('tolkien')) = 1, 'search matches author');
 select pg_temp.check((select count(*) from search_books('h')) = 0, 'search ignores one-letter queries');
 select pg_temp.check((select bool_and('thriller' = any (genres)) and count(*) = 1 from get_feed(10, 'thriller')), 'genre browsing filters the feed');
-select add_book('/works/OL1W', 'Tomb of Sand', 'Geetanjali Shree', 123, 2018, '{literary_fiction,"Bad!"}');
-select pg_temp.check((select cover_url from books where ol_key = '/works/OL1W') = 'https://covers.openlibrary.org/b/id/123-L.jpg', 'add_book builds the cover URL server-side');
+select add_book('/works/OL1W', '{literary_fiction,"Bad!"}');
+select pg_temp.check((select title = 'Tomb of Sand' and author = 'Geetanjali Shree' and first_published = 2018 and source = 'user'
+  and cover_url = 'https://covers.openlibrary.org/b/id/123-L.jpg' from books where ol_key = '/works/OL1W'), 'add_book takes title, author and cover from Open Library');
 select pg_temp.check((select genres from books where ol_key = '/works/OL1W') = '{literary_fiction}', 'add_book drops invalid genres');
-select pg_temp.check(add_book('/works/OL1W', 'Again', null, 1, null, '{}') = (select id from books where ol_key = '/works/OL1W'), 'add_book is idempotent');
-select pg_temp.check(pg_temp.raises($$select add_book('javascript:x', 'X', null, 1, null, '{}')$$), 'add_book rejects bad keys');
+select pg_temp.check(add_book('/works/OL1W') = (select id from books where ol_key = '/works/OL1W'), 'add_book is idempotent');
+select pg_temp.check(pg_temp.raises($$select add_book('javascript:x')$$), 'add_book rejects bad keys');
+select pg_temp.check(pg_temp.raises($$select add_book('/works/OL2W')$$), 'add_book rejects works Open Library does not have');
+select pg_temp.check(not exists (select 1 from get_feed(50) where title = 'Tomb of Sand'), 'reader-added books stay out of Discover');
+select pg_temp.check(exists (select 1 from search_books('tomb')), 'reader-added books are searchable');
+select pg_temp.check(not has_function_privilege('authenticated', 'public.nearby_reader_ids()', 'execute'), 'nearby reader ids are not callable from the app');
+select update_location(13.5, 77.5);
+reset role;
+select pg_temp.check((select round(extensions.st_y(location::extensions.geometry)::numeric, 2) from profiles where display_name = 'Asha') = 12.97, 'location updates are throttled');
+set role authenticated;
 select pg_temp.check(pg_temp.raises($$update profiles set birthdate = '1990-01-01' where id = auth.uid()$$), 'birthday is locked after onboarding');
 select pg_temp.check(nearby_readers() = 'few', 'nearby chip shows a bucket, not a count');
 
@@ -95,6 +104,14 @@ select pg_temp.check(not is_compatible(a, e), 'unmatched readers never match aga
   from profiles a, profiles e where a.display_name = 'Asha' and e.display_name = 'Esha';
 select pg_temp.check(not is_compatible(a, b), 'dating and friends readers never match')
   from profiles a, profiles b where a.display_name = 'Asha' and b.display_name = 'Ben';
+set role authenticated;
+
+-- Report + unmatch is one step: Asha reports Ben.
+select pg_temp.as_user('a');
+select report_and_unmatch((select match_id from get_matches() where other_name = 'Ben'), 'spam', '  asked for money  ');
+select pg_temp.check((select count(*) from get_matches()) = 0, 'reporting unmatches');
+reset role;
+select pg_temp.check((select count(*) = 1 and min(details) = 'asked for money' from reports), 'one report filed, details trimmed');
 set role authenticated;
 
 -- Synthetic readers: invisible to real readers unless one side is a tester.

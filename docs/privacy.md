@@ -62,7 +62,7 @@ We do **not sell** or rent your personal data and we do not share it for adverti
 
 We may also disclose data if required by law, a court order or a government authority, or to protect the safety of any person.
 
-Book covers are loaded from **Open Library** (Internet Archive), and when you search for a book the words you type are sent from your device to Open Library's search service. No account or profile data is sent to them; like any website, they receive your IP address with each request.
+Book covers are loaded from **Open Library** (Internet Archive), and when you search for a book the words you type are sent from your device to Open Library's search service. If you like a book that isn't in BookDate yet, our server asks Open Library for that book's details (only the book's ID is sent). No account or profile data is sent to them; like any website, they receive your IP address with each request.
 
 Some settings stay **only on your device** and are never sent to us: which chats you've read (for unread dots), hints you've dismissed, and the genre you're browsing.
 

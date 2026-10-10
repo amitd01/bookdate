@@ -30,6 +30,8 @@ type AuthState = {
   profile: Profile | null;
   /** Given name shared by Apple on first sign-in, used to prefill onboarding. */
   suggestedName: string;
+  /** True when the profile couldn't be loaded (offline); the app shows a retry screen instead of onboarding. */
+  profileError: boolean;
   refreshProfile: () => Promise<void>;
   signInWithApple: () => Promise<void>;
   /** Resolves false if the user closed the Google sheet. */
@@ -51,8 +53,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [suggestedName, setSuggestedName] = useState('');
 
+  const [profileError, setProfileError] = useState(false);
+
+  // Only a successful "no row" means "needs onboarding". A failed request keeps
+  // the profile we had and flags the error, so a network blip never sends an
+  // onboarded reader back through onboarding.
   const refreshProfile = useCallback(async () => {
-    setProfile(await getMyProfile());
+    try {
+      setProfile(await getMyProfile());
+      setProfileError(false);
+    } catch (e) {
+      setProfileError(true);
+      throw e;
+    }
   }, []);
 
   // Load profile whenever the signed-in user changes.
@@ -61,9 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       if (s) {
         analytics.identify(s.user.id);
-        setProfile(await getMyProfile().catch(() => null));
+        await refreshProfile().catch(() => undefined);
       } else {
         setProfile(null);
+        setProfileError(false);
       }
       setReady(true);
     };
@@ -73,7 +87,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'USER_UPDATED') load(s);
     });
     return () => sub.subscription.unsubscribe();
-  }, []);
+  }, [refreshProfile]);
 
   const signInWithApple = useCallback(async () => {
     const cred = await AppleAuthentication.signInAsync({
@@ -130,9 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
+    () => ({ ready, session, profile, profileError, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
       verifyEmailCode, resendEmailCode, signOut }),
-    [ready, session, profile, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
+    [ready, session, profile, profileError, suggestedName, refreshProfile, signInWithApple, signInWithGoogle, signInWithEmail,
       verifyEmailCode, resendEmailCode, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

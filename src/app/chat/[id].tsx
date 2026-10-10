@@ -62,7 +62,9 @@ export default function Chat() {
     return subscribeToMessages(id, (m) => setMessages((cur) => (cur.some((c) => c.id === m.id) ? cur : [...cur, m])));
   }, [id]);
   useEffect(() => { if (!match) refresh(); }, [match, refresh]); // e.g. opened from a push before the inbox loaded
-  useEffect(() => { markSeen(id); }, [id, messages.length, markSeen]);
+  // Read up to the newest message (server time), or the match itself if nobody has written yet.
+  const seenAt = messages.at(-1)?.created_at ?? match?.created_at;
+  useEffect(() => { if (seenAt) markSeen(id, seenAt); }, [id, seenAt, markSeen]);
 
   const send = async (text = draft) => {
     if (!text.trim() || sending) return;
@@ -89,7 +91,7 @@ export default function Chat() {
   const submitReport = async (reason: ReportReason, details: string) => {
     if (!match) return;
     try {
-      await reportAndUnmatch(match, reason, details);
+      await reportAndUnmatch(match.match_id, reason, details);
       setReporting(false);
       Alert.alert('Thanks for telling us', `We review every report within 24 hours. ${match.other_name} has been removed from your Book Dates. Your like on "${match.book_title}" stays.`, [{ text: 'OK', onPress: leave }]);
     } catch (e) {
