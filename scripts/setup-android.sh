@@ -55,7 +55,9 @@ say "✔ Saved."
 
 bold "4/6  Build the Android test APK (automatic, ~15–25 min on EAS)"
 say "If asked 'Generate a new Android Keystore?' → answer Yes."
-if yes "Start the build now?"; then npm run build:android:apk; fi
+say "If asked 'Install and run on an emulator?' → answer No (install from the link/QR on your phone)."
+# Don't abort the walkthrough if only the optional emulator step fails.
+if yes "Start the build now?"; then npm run build:android:apk || say "(Build command exited non-zero — if the build itself finished, continue.)"; fi
 
 bold "5/6  Android OAuth client (manual: needs the keystore SHA-1)"
 say "In the menu that opens: choose 'Android' → 'production' (or 'preview') → 'Keystore'"
