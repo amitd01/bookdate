@@ -62,21 +62,6 @@ export function Label({ children }: { children: ReactNode }) {
   return <Text style={s.label}>{children}</Text>;
 }
 
-/** Numeric stepper, e.g. for the preferred age range. */
-export function Stepper({ value, min, max, onChange }: { value: number; min: number; max: number; onChange: (n: number) => void }) {
-  return (
-    <View style={s.stepper}>
-      <Pressable accessibilityLabel="decrease" onPress={() => onChange(Math.max(min, value - 1))} style={s.stepBtn}>
-        <Text style={s.stepGlyph}>−</Text>
-      </Pressable>
-      <Text style={[type.h2, { minWidth: 36, textAlign: 'center' }]}>{value}</Text>
-      <Pressable accessibilityLabel="increase" onPress={() => onChange(Math.min(max, value + 1))} style={s.stepBtn}>
-        <Text style={s.stepGlyph}>+</Text>
-      </Pressable>
-    </View>
-  );
-}
-
 export function EmptyState({ emoji, title, body, children }: { emoji: string; title: string; body: string; children?: ReactNode }) {
   return (
     <View style={s.empty}>
@@ -107,8 +92,5 @@ const s = StyleSheet.create({
   chipGroup: { flexDirection: 'row', flexWrap: 'wrap', gap: space(2) },
   label: { fontSize: 13, fontWeight: '700', color: colors.inkMuted, textTransform: 'uppercase', letterSpacing: 0.8 },
   input: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, borderRadius: radius.md, padding: space(3.5), fontSize: 17, color: colors.ink },
-  stepper: { flexDirection: 'row', alignItems: 'center', gap: space(2) },
-  stepBtn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, alignItems: 'center', justifyContent: 'center' },
-  stepGlyph: { fontSize: 22, color: colors.ink },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: space(8), gap: space(3) },
 });

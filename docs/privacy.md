@@ -5,7 +5,7 @@ permalink: /privacy/
 
 # BookDate Privacy Policy
 
-**Effective date:** 30 September 2026
+**Effective date:** 10 October 2026
 
 BookDate ("**BookDate**", "**we**", "**us**") is a mobile app that helps adults meet nearby people who love the same books. BookDate is operated by the developer named as the seller on BookDate's App Store listing, based in India. This policy explains what personal data we collect, why, who we share it with, and the choices and rights you have. It is written to meet India's **Digital Personal Data Protection Act, 2023 (DPDP Act)** and the **Information Technology Act, 2000** and its rules, and also the EU/UK **GDPR**, the California **CCPA/CPRA**, and similar laws that may apply to you.
 
@@ -38,7 +38,7 @@ Gender and dating preferences can be sensitive. We collect them only because you
 |---|---|---|
 | Create and secure your account | Account | Consent (DPDP); contract (GDPR) |
 | Show you book covers and personalise your feed | Profile, activity | Consent; contract |
-| Match you with readers **within 15 km** who liked the same book and fit each other's preferences | Profile, approximate location, activity | Consent; contract |
+| Match you with readers **within the distance you both chose** (at most 15 km or 10 miles) who liked the same book and fit each other's preferences | Profile, approximate location, activity | Consent; contract |
 | Let matched readers chat, and send match/message notifications | Activity, push token | Consent; contract |
 | Keep the community safe: enforce our Terms, review reports, prevent fraud and abuse | All of the above as needed | Legitimate uses permitted by law; legitimate interests (GDPR) |
 | Understand and improve the app | Product analytics | Consent; legitimate interests (GDPR) |
@@ -48,7 +48,7 @@ By creating an account and completing onboarding, you consent to these purposes.
 
 ## 4. What other users can see
 
-When you match with someone, they can see your **first name, age, gender, bio, favourite genres**, the book you both liked, and the messages you send them. **No one else** can see your profile. Other users **never** see your email address or your location — only that you are within 15 km.
+When you match with someone, they can see your **first name, age, gender, bio, favourite genres**, the book you both liked, and the messages you send them. **No one else** can see your profile. Other users **never** see your email address or your location — only that you are nearby.
 
 ## 5. Who we share data with
 

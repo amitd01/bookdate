@@ -85,7 +85,7 @@ No tracking → no App Tracking Transparency prompt.
 
 ## 7. Suggested App Review notes
 
-> BookDate matches readers who like the same book cover and live within 15 km of each other.
+> BookDate matches readers who like the same book cover and live near each other (each reader picks a distance of up to 15 km or 10 miles).
 > Demo login (email/password on the sign-in screen): reviewer@bookdate.app / <password>.
 > The account already has one match ("Demo Reader (test account)") with a message. Swiping right on
 > covers labelled "❤️ 1 reader near you loved this" creates a new match instantly while you are near
@@ -99,11 +99,11 @@ No tracking → no App Tracking Transparency prompt.
 - **Keywords:** book,dating,reader,book club,reading,novel,literature,match,bookish,library
 - **Promotional text:** Judge a book by its cover — then meet the reader nearby who loved it too.
 - **Description:**
-  BookDate is the dating app for people who'd rather talk about books. Swipe right on covers you love, left on the ones you'd skip. When a reader less than 15 km away loves the same book, it's a book date — and your chat opens as a two-person book club about that very book.
+  BookDate is the dating app for people who'd rather talk about books. Swipe right on covers you love, left on the ones you'd skip. When a reader near you loves the same book, it's a book date — and your chat opens as a two-person book club about that very book.
   • Pick your favourite genres and who you'd like to meet
   • Swipe a personalised stream of covers from every genre
   • See which books readers near you are loving
   • Match over a shared favourite and start talking with built-in discussion prompts
-  • Always local: matches are within 15 km
+  • Always local: choose up to 15 km or 10 miles
   • Safe by design: no photos, report & block in every chat, exact location never shared
 - **Screenshots:** 6.9" iPhone required (1320×2868). Capture Discover, match screen, chat, onboarding genres, profile from the TestFlight build.

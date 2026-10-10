@@ -4,11 +4,13 @@ import { useState } from 'react';
 import { Alert, Linking, ScrollView, StyleSheet, Text, View } from 'react-native';
 
 import { Avatar, Button } from '@/components/ui';
-import { GENDERS, genreLabel, RADIUS_KM } from '@/constants/genres';
+import { formatDistance } from '@/constants/distance';
+import { GENDERS, genreLabel } from '@/constants/genres';
 import { colors, radius, space, type } from '@/constants/theme';
 import { deleteAccount } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { config } from '@/lib/config';
+import { errorMessage } from '@/lib/errors';
 
 const ageFrom = (birthdate: string) => Math.floor((Date.now() - new Date(birthdate).getTime()) / 31_557_600_000);
 const genderLabel = (g: string) => GENDERS.find((x) => x.value === g)?.label ?? g;
@@ -23,14 +25,14 @@ export default function Profile() {
       { text: 'Cancel', style: 'cancel' },
       { text: 'Delete', style: 'destructive', onPress: async () => {
         setDeleting(true);
-        try { await deleteAccount(); } catch (e) { Alert.alert('Could not delete account', (e as Error).message); setDeleting(false); }
+        try { await deleteAccount(); } catch (e) { Alert.alert('Could not delete account', errorMessage(e)); setDeleting(false); }
       } },
     ]);
 
   const rows: [string, string][] = [
     ['Looking for', profile.interested_in.map(genderLabel).join(', ')],
     ['Ages', `${profile.age_min} – ${profile.age_max}`],
-    ['Distance', `Within ${RADIUS_KM} km`],
+    ['Distance', `Up to ${formatDistance(profile.max_km, profile.distance_unit)}`],
   ];
 
   return (

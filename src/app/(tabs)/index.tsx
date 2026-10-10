@@ -1,16 +1,17 @@
 /**
  * Discover: the swipe deck. Loads a personalised feed (get_feed), keeps a
  * small buffer topped up, records swipes and celebrates new matches.
+ * The deck is re-ranked whenever the screen gains focus or the app returns
+ * to the foreground, so "❤️ n readers near you" counts stay current.
  */
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
 import { useCallback, useRef, useState } from 'react';
-import { ActivityIndicator, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, AppState, Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
 
 import { BookCover } from '@/components/BookCover';
 import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard';
 import { Button, EmptyState } from '@/components/ui';
-import { RADIUS_KM } from '@/constants/genres';
 import { colors, radius, space, type } from '@/constants/theme';
 import { getFeed, swipe } from '@/lib/api';
 import { syncLocation, type LocationState } from '@/lib/location';
@@ -28,24 +29,41 @@ export default function Discover() {
   const top = useRef<SwipeCardHandle>(null);
   const fetching = useRef(false);
 
-  /** Appends fresh books, skipping any already in the deck. */
-  const refill = useCallback(async () => {
+  /**
+   * Fetches the feed. 'append' tops up the deck (refreshing counts on cards
+   * already in it); 'refresh' re-ranks everything behind the card on screen,
+   * so newly liked books (and their nearby counts) surface immediately.
+   */
+  const load = useCallback(async (mode: 'append' | 'refresh') => {
     if (fetching.current) return;
     fetching.current = true;
     try {
       const books = await getFeed(20);
-      setDeck((cur) => [...cur, ...books.filter((b) => !cur.some((c) => c.id === b.id))]);
+      const fresh = new Map(books.map((b) => [b.id, b]));
+      setDeck((cur) => {
+        if (mode === 'refresh') {
+          const head = cur[0] ? [fresh.get(cur[0].id) ?? cur[0]] : []; // keep the visible card
+          return [...head, ...books.filter((b) => b.id !== cur[0]?.id)];
+        }
+        const updated = cur.map((c) => fresh.get(c.id) ?? c);
+        return [...updated, ...books.filter((b) => !cur.some((c) => c.id === b.id))];
+      });
     } finally {
       fetching.current = false;
       setLoading(false);
     }
   }, []);
 
-  // On focus: refresh location first (the feed's "nearby" signals depend on
-  // it), then top up the deck. refill() de-duplicates, so this is idempotent.
+  const refill = useCallback(() => load('append'), [load]);
+
+  // On focus and whenever the app returns to the foreground: refresh location
+  // first (the feed's "nearby" signals depend on it), then re-rank the deck.
   useFocusEffect(useCallback(() => {
-    syncLocation().then(setLoc).catch(() => undefined).finally(refill);
-  }, [refill]));
+    const refresh = () => { syncLocation().then(setLoc).catch(() => undefined).finally(() => load('refresh')); };
+    refresh();
+    const sub = AppState.addEventListener('change', (st) => { if (st === 'active') refresh(); });
+    return () => sub.remove();
+  }, [load]));
 
   const onSwiped = async (liked: boolean) => {
     const book = deck[0];
@@ -67,7 +85,7 @@ export default function Discover() {
   if (loc === 'denied') {
     return (
       <EmptyState emoji="📍" title="Location needed"
-        body={`BookDate only matches readers within ${RADIUS_KM} km. Allow location access so we can find book lovers near you.`}>
+        body="BookDate only matches readers close to you (15 km or 10 miles at most). Allow location access so we can find book lovers near you.">
         <Button title="Open Settings" onPress={() => Linking.openSettings()} />
       </EmptyState>
     );

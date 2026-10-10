@@ -1,4 +1,5 @@
 /** Row / RPC shapes mirrored from supabase/migrations. */
+import type { DistanceUnit } from '@/constants/distance';
 import type { Gender } from '@/constants/genres';
 
 export type Profile = {
@@ -9,6 +10,8 @@ export type Profile = {
   interested_in: Gender[];
   age_min: number;
   age_max: number;
+  max_km: number; // match distance, 1–16.1 km (mutual: the smaller of two readers' choices applies)
+  distance_unit: DistanceUnit; // display only
   genres: string[];
   bio: string | null;
 };
@@ -23,7 +26,7 @@ export type FeedBook = {
   cover_url: string;
   genres: string[];
   first_published: number | null;
-  nearby_likes: number; // compatible readers within 15 km who liked it
+  nearby_likes: number; // compatible readers in range who liked it
 };
 
 export type Match = {

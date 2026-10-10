@@ -10,10 +10,10 @@ We're happy to help. Email **[amitdas+bookdatesupport@gmail.com](mailto:amitdas+
 ## Common questions
 
 **How does matching work?**
-Swipe right on book covers you love. When a reader within 15 km also likes the same book, and you both fit each other's age and gender preferences, it's a match and your book-club chat opens.
+Swipe right on book covers you love. When a reader within your chosen distance (up to 15 km or 10 miles) also likes the same book, and you both fit each other's age and gender preferences, it's a match and your book-club chat opens.
 
 **Why do you need my location?**
-Only to find readers within 15 km. It's rounded to about 100 m and never shown to anyone.
+Only to find readers within the distance you chose (change it in Profile → Edit profile). It's rounded to about 100 m and never shown to anyone.
 
 **How do I report or block someone?**
 Open the chat, tap **•••** in the top-right corner, and choose Report, Block or Unmatch. Reporting also blocks the person for you.

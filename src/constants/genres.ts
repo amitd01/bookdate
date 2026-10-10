@@ -12,5 +12,3 @@ export const GENDERS = [
 ] as const;
 export type Gender = (typeof GENDERS)[number]['value'];
 
-/** Product rule: discovery radius is fixed (mirrors public.match_radius_m()). */
-export const RADIUS_KM = 15;
