@@ -34,11 +34,23 @@ const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persi
 /** ol_key -> book row; lets one work collect several genres. */
 const books = new Map();
 
+/** GET JSON with a 30 s timeout and one retry: Open Library is free, and sometimes slow. */
+async function getJson(url, label) {
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      const res = await fetch(url, { headers: UA, signal: AbortSignal.timeout(30_000) });
+      if (res.ok) return await res.json();
+      console.warn(`  ${label}: HTTP ${res.status}${attempt === 1 ? ', retrying' : ', skipped'}`);
+    } catch (e) {
+      console.warn(`  ${label}: ${e.name === 'TimeoutError' ? 'timed out' : e.message}${attempt === 1 ? ', retrying' : ', skipped'}`);
+    }
+  }
+  return null;
+}
+
 /** All-time top works of an Open Library subject (subjects API, sorted by popularity). */
 async function fetchTop(subject, limit) {
-  const res = await fetch(`https://openlibrary.org/subjects/${subject}.json?limit=${limit}`, { headers: UA });
-  if (!res.ok) { console.warn(`skip ${subject}: HTTP ${res.status}`); return []; }
-  return (await res.json()).works ?? [];
+  return (await getJson(`https://openlibrary.org/subjects/${subject}.json?limit=${limit}`, subject))?.works ?? [];
 }
 
 /**
@@ -51,9 +63,7 @@ async function fetchModern(subject, limit) {
   const q = `subject_key:${subject} AND first_publish_year:[${MODERN_FROM} TO ${new Date().getFullYear()}]`;
   const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&sort=readinglog&limit=${limit}`
     + '&fields=key,title,author_name,cover_i,first_publish_year';
-  const res = await fetch(url, { headers: UA });
-  if (!res.ok) { console.warn(`skip ${subject} (modern): HTTP ${res.status}`); return []; }
-  const { docs = [] } = await res.json();
+  const { docs = [] } = (await getJson(url, `${subject} (modern)`)) ?? {};
   return docs.map((d) => ({
     key: d.key, title: d.title, cover_id: d.cover_i, first_publish_year: d.first_publish_year,
     authors: d.author_name?.length ? [{ name: d.author_name[0] }] : [],
