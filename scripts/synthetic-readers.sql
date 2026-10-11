@@ -4,7 +4,8 @@
 --   3 genders × every age 18–60 × 78 readers each = 10,062 readers.
 --   Each has 3–5 random genres, mostly-dating / some friends mode, a 5–15 km
 --   distance, an age range around their own age, and 20–60 book likes
---   (about 75% from their own genres, favouring each genre's best-known books).
+--   (about 75% from their own genres, favouring each genre's best-known books
+--   and books first published from 1990 on).
 --   Homes are random spots (±1.5 km) around 28 neighbourhoods, half per city.
 --
 -- Synthetic readers are invisible to real users (see migration
@@ -106,13 +107,18 @@ select id, display_name,
        now() - random() * interval '25 days', true, now() - random() * interval '60 days'
 from synth;
 
--- Popularity proxy: books are seeded in Open Library's popularity order per
--- genre, so earlier books in a genre get up to 4× the chance of a like.
+-- Like weights. Popularity proxy: books are seeded in Open Library's popularity
+-- order per genre, so earlier books in a genre get up to 4× the chance of a
+-- like. Era: like real readers today, synthetic readers mostly like books from
+-- 1990 on (3×) and like older ones less (0.5×).
 create temp table synth_weights on commit drop as
-select id, genres, 1 + 3 * exp(-(row_number() over (partition by genres[1] order by id)) / 40.0) as w
-from public.books;
+select id, genres,
+       (1 + 3 * exp(-(row_number() over (partition by genres[1] order by id)) / 40.0))
+       * case when first_published >= 1990 then 3 when first_published is null then 1 else 0.5 end as w
+from public.books
+where source = 'catalogue';
 
--- 20–60 likes each: ~75% weighted picks from their genres, the rest anywhere.
+-- 20–60 likes each: ~75% weighted picks from their genres, the rest weighted picks from anywhere.
 insert into public.swipes (user_id, book_id, liked, created_at)
 select s.id, pick.id, true, now() - random() * interval '30 days'
 from synth s
@@ -123,7 +129,7 @@ cross join lateral (
    limit round(s.n_likes * 0.75))
   union
   (select b.id from synth_weights b where s.k is not null
-   order by random() limit s.n_likes - round(s.n_likes * 0.75))
+   order by random() ^ (1.0 / b.w) desc limit s.n_likes - round(s.n_likes * 0.75))
 ) pick
 on conflict (user_id, book_id) do nothing;
 
