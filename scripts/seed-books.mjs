@@ -4,8 +4,8 @@
  * For every genre in src/constants/genres.json it pulls, from the matching
  * Open Library subject:
  *   1. the all-time top works (--per-genre, default 100), and
- *   2. the top works first published since 1990 (--modern-per-genre, default
- *      250), so the deck isn't dominated by classics.
+ *   2. the most-read works first published since 1990 (--modern-per-genre,
+ *      default 250, via the search API), so the deck isn't dominated by classics.
  * Genres are merged when a work appears under several subjects. Only works
  * with a cover are kept — this is a cover-swiping app.
  *
@@ -27,25 +27,42 @@ const arg = (name, fallback) => {
 const perGenre = arg('--per-genre', 100);
 const modernPerGenre = arg('--modern-per-genre', 250);
 const MODERN_FROM = 1990; // matches the "old book" line in get_feed's ranking
+const UA = { 'User-Agent': 'BookDate/1.0 (seed script)' };
 const genres = JSON.parse(readFileSync(new URL('../src/constants/genres.json', import.meta.url)));
 const db = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, { auth: { persistSession: false } });
 
 /** ol_key -> book row; lets one work collect several genres. */
 const books = new Map();
 
-/** One Open Library subject page; `modern` limits it to works first published since 1990. */
-async function fetchWorks(subject, limit, modern) {
-  const era = modern ? `&published_in=${MODERN_FROM}-${new Date().getFullYear()}` : '';
-  const res = await fetch(`https://openlibrary.org/subjects/${subject}.json?limit=${limit}${era}`,
-    { headers: { 'User-Agent': 'BookDate/1.0 (seed script)' } });
-  if (!res.ok) { console.warn(`skip ${subject}${modern ? ' (modern)' : ''}: HTTP ${res.status}`); return []; }
-  const { works = [] } = await res.json();
-  // published_in also matches recent reprints of old books, so check the work's first year too.
-  return modern ? works.filter((w) => (w.first_publish_year ?? 0) >= MODERN_FROM) : works;
+/** All-time top works of an Open Library subject (subjects API, sorted by popularity). */
+async function fetchTop(subject, limit) {
+  const res = await fetch(`https://openlibrary.org/subjects/${subject}.json?limit=${limit}`, { headers: UA });
+  if (!res.ok) { console.warn(`skip ${subject}: HTTP ${res.status}`); return []; }
+  return (await res.json()).works ?? [];
+}
+
+/**
+ * Most-read works of a subject first published since 1990. Uses the search API,
+ * which filters on the *work's* first publication year (the subjects API's
+ * published_in matches any edition, so new reprints of classics crowd it out).
+ * Results are reshaped to look like subjects-API works.
+ */
+async function fetchModern(subject, limit) {
+  const q = `subject_key:${subject} AND first_publish_year:[${MODERN_FROM} TO ${new Date().getFullYear()}]`;
+  const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(q)}&sort=readinglog&limit=${limit}`
+    + '&fields=key,title,author_name,cover_i,first_publish_year';
+  const res = await fetch(url, { headers: UA });
+  if (!res.ok) { console.warn(`skip ${subject} (modern): HTTP ${res.status}`); return []; }
+  const { docs = [] } = await res.json();
+  return docs.map((d) => ({
+    key: d.key, title: d.title, cover_id: d.cover_i, first_publish_year: d.first_publish_year,
+    authors: d.author_name?.length ? [{ name: d.author_name[0] }] : [],
+  }));
 }
 
 for (const g of genres) {
-  const works = [...await fetchWorks(g.subject, perGenre, false), ...await fetchWorks(g.subject, modernPerGenre, true)];
+  const modernWorks = await fetchModern(g.subject, modernPerGenre);
+  const works = [...await fetchTop(g.subject, perGenre), ...modernWorks];
   let kept = 0;
   for (const w of works) {
     if (!w.cover_id) continue;
@@ -61,12 +78,16 @@ for (const g of genres) {
     });
     kept++;
   }
-  console.log(`${g.label.padEnd(20)} ${kept} new works`);
+  console.log(`${g.label.padEnd(20)} ${String(kept).padStart(3)} new works (${modernWorks.length} modern found)`);
 }
 
 const rows = [...books.values()].map((b) => ({ ...b, genres: [...b.genres] }));
 for (let i = 0; i < rows.length; i += 500) {
   const { error } = await db.from('books').upsert(rows.slice(i, i + 500), { onConflict: 'ol_key' });
+  if (error?.code === '42501') {
+    console.error('Supabase refused the write: SUPABASE_SERVICE_ROLE_KEY must be the service_role (or sb_secret_…) key, not the anon/publishable key.');
+    process.exit(1);
+  }
   if (error) throw error;
 }
 const modern = rows.filter((b) => (b.first_published ?? 0) >= MODERN_FROM).length;
