@@ -14,6 +14,10 @@ insert into books (ol_key, title, author, cover_url, genres) values
   ('/w/1', 'The Hobbit', 'Tolkien', 'x', '{fantasy,classics}'),
   ('/w/2', 'Gone Girl',  'Flynn',   'x', '{thriller}'),
   ('/w/3', 'Emma',       'Austen',  'x', '{romance,classics}');
+-- Same genre, no likes: only the publication year differs.
+insert into books (ol_key, title, author, cover_url, genres, first_published) values
+  ('/w/4', 'Old Road', 'Then', 'x', '{travel}', 1950),
+  ('/w/5', 'New Road', 'Now',  'x', '{travel}', 2015);
 
 create function pg_temp.as_user(c text) returns void language sql as
   $$ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000' || c, false) $$;
@@ -36,6 +40,8 @@ select pg_temp.as_user('b'); select swipe(1, true); select swipe(2, false);
 select pg_temp.as_user('a');
 select pg_temp.check((select title from get_feed(10) limit 1) = 'The Hobbit', 'feed ranks nearby-liked book first');
 select pg_temp.check((select nearby_likes from get_feed(10) where title = 'The Hobbit') = 1, 'nearby_likes counts only compatible readers in range');
+select pg_temp.check((select array_agg(title order by ord) from get_feed(50) with ordinality f(id, title, author, cover_url, genres, first_published, nearby_likes, ord)
+  where title like '%Road') = '{New Road,Old Road}', 'modern books rank above pre-1990 ones');
 select pg_temp.check((select count(*) from profiles) = 1, 'RLS: profiles only exposes own row');
 select pg_temp.check((select bio from profiles) = 'I love **** books', 'profanity masked in bio');
 select pg_temp.check((select other_name from swipe(1, true)) = 'Ben', 'right swipe matches compatible nearby reader');
