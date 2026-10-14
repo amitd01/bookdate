@@ -68,6 +68,7 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
+      "./plugins/withSceneLifecycle",
       "expo-router",
       "expo-apple-authentication",
       [
