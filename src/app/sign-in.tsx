@@ -153,7 +153,8 @@ function Collage() {
           <Column key={i} index={i} offset={off} width={colWidth} />
         ))}
       </View>
-      <LinearGradient colors={[`${t.bg}00`, t.bg]} locations={[0.2, 0.68]} style={{ position: 'absolute', left: 0, right: 0, top: 0, height }} />
+      {/* Fade the covers out above the copy so the headline always sits on a calm background. */}
+      <LinearGradient colors={[`${t.bg}00`, `${t.bg}D9`, t.bg]} locations={[0.18, 0.4, 0.52]} style={{ position: 'absolute', left: 0, right: 0, top: 0, height }} />
     </View>
   );
 }
