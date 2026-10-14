@@ -37,6 +37,22 @@ Decisions (design proposal, all as recommended): the tab stays "Book Dates" with
 
 Dark mode · bundle Fraunces · seed-shelf onboarding step · weekly city shelf · "My shelf" + how others see you · undo last pass · discreet notification previews · invite card with deep link to a book · local (Indian) catalogue.
 
+## Release 1.2 — visual refresh v2 (needs a store build)
+
+Design handoff from Claude Design: a re-skin with the same flows, copy and data. New native modules (`expo-blur`, `expo-linear-gradient`, `react-native-svg`), so this ships as **1.2.0 via the stores, not OTA**.
+
+| # | Item | Status |
+|---|---|---|
+| 17 | New tokens (`getTheme(scheme, mode)`), theme provider, brand fonts | ✅ PR |
+| 18 | **Dark mode** (`userInterfaceStyle: automatic`, dark splash) | ✅ PR |
+| 19 | Restyle: sign-in collage, tab bars, Discover deck + genre sheet, match moment, Book Dates, chat, search, profile, onboarding/edit, sheets | ✅ PR |
+| 20 | Profile: "Loved lately" covers + live Looking-for switch | ✅ PR |
+| 21 | Chat typing indicator (needs a Supabase realtime presence channel per match) | 🔧 |
+| 22 | Search: "Loved by readers near you" list when the query is empty (needs a nearby-popular RPC) | 🔧 |
+| 23 | Real blur on Android (`BlurTargetView` + `dimezisBlurView`); today Android draws solid glass, as the handoff allows | 🔧 |
+| 24 | Discover: dominant-colour glow behind the card (needs a per-book colour; the blurred cover halo covers most of it) | 🔧 |
+| 25 | App icon / Android adaptive icon background still use the old burgundy | ❓ |
+
 ## Release status
 
 | Platform | Version | Next step |

@@ -6,7 +6,7 @@
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
 import type { ColorValue } from 'react-native';
 
-import { colors } from '@/constants/theme';
+import { useTheme } from '@/lib/theme';
 
 const GLYPHS = {
   heart: { ios: 'heart.fill', android: 'favorite' },
@@ -17,6 +17,9 @@ const GLYPHS = {
   browse: { ios: 'line.3.horizontal.decrease', android: 'filter_list' },
   chevronDown: { ios: 'chevron.down', android: 'expand_more' },
   chevronRight: { ios: 'chevron.right', android: 'chevron_right' },
+  back: { ios: 'chevron.left', android: 'arrow_back' },
+  book: { ios: 'book', android: 'menu_book' },
+  discover: { ios: 'rectangle.portrait.on.rectangle.portrait', android: 'style' },
   shield: { ios: 'checkmark.shield', android: 'verified_user' },
   send: { ios: 'arrow.up', android: 'arrow_upward' },
   people: { ios: 'person.2.fill', android: 'group' },
@@ -34,6 +37,7 @@ const GLYPHS = {
 
 export type IconName = keyof typeof GLYPHS;
 
-export function Icon({ name, size = 20, color = colors.ink }: { name: IconName; size?: number; color?: ColorValue }) {
-  return <SymbolView name={GLYPHS[name]} size={size} tintColor={color} accessible={false} />;
+export function Icon({ name, size = 20, color }: { name: IconName; size?: number; color?: ColorValue }) {
+  const t = useTheme();
+  return <SymbolView name={GLYPHS[name]} size={size} tintColor={color ?? t.ink} accessible={false} />;
 }

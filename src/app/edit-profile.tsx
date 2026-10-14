@@ -3,13 +3,15 @@ import { router, Stack } from 'expo-router';
 import { Pressable, Text } from 'react-native';
 
 import { ProfileWizard } from '@/components/ProfileWizard';
-import { colors } from '@/constants/theme';
+import { fonts } from '@/constants/theme';
 import { analytics } from '@/lib/analytics';
 import { saveProfile } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import { useTheme } from '@/lib/theme';
 
 export default function EditProfile() {
   const { profile, refreshProfile } = useAuth();
+  const t = useTheme();
   if (!profile) return null;
   const { id: _id, ...initial } = profile;
   return (
@@ -17,7 +19,7 @@ export default function EditProfile() {
       <Stack.Screen options={{
         headerLeft: () => (
           <Pressable accessibilityRole="button" onPress={() => router.back()} hitSlop={12}>
-            <Text style={{ color: colors.accent, fontSize: 17 }}>Cancel</Text>
+            <Text style={{ color: t.accInk, fontFamily: fonts.uiSemi, fontSize: 17 }}>Cancel</Text>
           </Pressable>
         ),
       }} />

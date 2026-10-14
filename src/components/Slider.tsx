@@ -10,7 +10,8 @@ import { StyleSheet, View, type AccessibilityActionEvent } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useSharedValue } from 'react-native-reanimated';
 
-import { colors } from '@/constants/theme';
+import type { Theme } from '@/constants/theme';
+import { useStyles, useTheme } from '@/lib/theme';
 
 const THUMB = 28;
 const HIT = 44; // minimum touch target height
@@ -23,10 +24,13 @@ type Props = {
   /** Spoken value for each thumb, e.g. (v) => `${v} km`. */
   describe: (v: number, thumb: number) => string;
   labels: string[]; // accessibility label per thumb
-  color?: string; // fill + thumb ring (teal in friends mode)
+  color?: string; // fill + thumb ring (defaults to the mode accent)
 };
 
-export function Slider({ values, min, max, onChange, describe, labels, color = colors.accent }: Props) {
+export function Slider({ values, min, max, onChange, describe, labels, color: colorProp }: Props) {
+  const t = useTheme();
+  const s = useStyles(make);
+  const color = colorProp ?? t.acc;
   const [width, setWidth] = useState(0);
   const active = useSharedValue(0); // thumb being dragged (a shared value, so the React Compiler allows writes in handlers)
   const span = max - min;
@@ -79,11 +83,11 @@ export function Slider({ values, min, max, onChange, describe, labels, color = c
   );
 }
 
-const s = StyleSheet.create({
+const make = (t: Theme) => StyleSheet.create({
   root: { height: HIT, justifyContent: 'center' },
   // The rail is inset by half a thumb so its ends sit under the thumb centres; the fill is positioned within it.
-  rail: { position: 'absolute', left: THUMB / 2, right: THUMB / 2, height: 4, borderRadius: 2, backgroundColor: colors.line },
-  fill: { position: 'absolute', top: 0, bottom: 0, borderRadius: 2, backgroundColor: colors.accent },
+  rail: { position: 'absolute', left: THUMB / 2, right: THUMB / 2, height: 4, borderRadius: 2, backgroundColor: t.line },
+  fill: { position: 'absolute', top: 0, bottom: 0, borderRadius: 2, backgroundColor: t.acc },
   thumbSlot: { position: 'absolute', width: THUMB, height: HIT, justifyContent: 'center' },
-  thumb: { width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: colors.card, borderWidth: 2, borderColor: colors.accent, elevation: 2, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
+  thumb: { width: THUMB, height: THUMB, borderRadius: THUMB / 2, backgroundColor: t.surface, borderWidth: 2, borderColor: t.acc, elevation: 2, shadowColor: '#000', shadowOpacity: 0.15, shadowRadius: 3, shadowOffset: { width: 0, height: 1 } },
 });

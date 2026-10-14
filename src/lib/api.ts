@@ -66,6 +66,18 @@ export async function swipe(book: Pick<FeedBook, 'id' | 'genres' | 'nearby_likes
   return matches;
 }
 
+/** A book the reader liked (Profile "Loved lately"). */
+export type LovedBook = Pick<FeedBook, 'id' | 'title' | 'author' | 'cover_url'>;
+
+/** The reader's liked books, most recent first. */
+export async function getLovedBooks(limit = 20): Promise<LovedBook[]> {
+  const id = await uid();
+  const rows = unwrap(await supabase.from('swipes').select('books(id,title,author,cover_url)')
+    .eq('user_id', id).eq('liked', true).order('created_at', { ascending: false }).limit(limit));
+  // Many-to-one embed: one book per swipe (null if the book was removed).
+  return (rows as unknown as { books: LovedBook | null }[]).flatMap((r) => (r.books ? [r.books] : []));
+}
+
 /** Catalogue search by title or author (2+ characters). */
 export async function searchBooks(query: string): Promise<SearchBook[]> {
   return unwrap(await supabase.rpc('search_books', { p_query: query, p_limit: 20 })) ?? [];
