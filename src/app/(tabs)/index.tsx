@@ -143,7 +143,10 @@ export default function Discover() {
     return screen(
       <EmptyState icon="location" title="Find readers near you"
         body="BookDate matches you with readers close by (up to 15 km or 10 miles, you choose). Your exact location is never shown to anyone.">
-        <Button title="Allow location" onPress={() => requestLocationPermission().then(() => syncLocation(false)).then(setLoc).catch(() => undefined)} />
+        <Button title="Allow location" onPress={() => requestLocationPermission()
+          // Show the deck as soon as permission is granted; the position uploads in the background.
+          .then((st) => { setLoc(st); if (st === 'granted') syncLocation(false).catch(() => undefined); })
+          .catch(() => undefined)} />
       </EmptyState>
     );
   }
