@@ -49,7 +49,7 @@ export default function Matches() {
       <View style={{ flex: 1, paddingTop: insets.top + 10, paddingBottom: tabInset }}>
         <Ambient />
         <LargeTitle>Book Dates</LargeTitle>
-        <EmptyState icon="chats" title={`No ${tone.noun.toLowerCase()}s yet`}
+        <EmptyState icon="chats" title={`No ${tone.plural} yet`}
           body="Every book you like is a standing invitation. When a reader nearby loves the same one, you'll match here." />
       </View>
     );
