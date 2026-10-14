@@ -55,6 +55,17 @@ export function Gradient({ children, style, colors }: { children?: ReactNode; st
 }
 
 /**
+ * SVG gradient stops ignore the alpha in an rgba() colour, so split it into
+ * an opaque colour + stopOpacity: <Stop {...svgStop(t.amb1)} />.
+ */
+export function svgStop(color: string, scale = 1) {
+  const m = color.match(/rgba?\(([^)]+)\)/);
+  if (!m) return { stopColor: color, stopOpacity: scale };
+  const [r, g, b, a = '1'] = m[1].split(',').map((x) => x.trim());
+  return { stopColor: `rgb(${r},${g},${b})`, stopOpacity: Number(a) * scale };
+}
+
+/**
  * Ambient glow behind a screen: two soft radial blobs (amb1 top-left, amb2
  * top-right) over `bg`. Render first inside a screen; it never takes touches.
  */
@@ -66,12 +77,12 @@ export function Ambient() {
       <Svg width={width} height={height}>
         <Defs>
           <RadialGradient id="a1" cx="0.5" cy="0.5" r="0.5">
-            <Stop offset="0" stopColor={t.amb1} stopOpacity={1} />
-            <Stop offset="1" stopColor={t.amb1} stopOpacity={0} />
+            <Stop offset="0" {...svgStop(t.amb1)} />
+            <Stop offset="1" {...svgStop(t.amb1, 0)} />
           </RadialGradient>
           <RadialGradient id="a2" cx="0.5" cy="0.5" r="0.5">
-            <Stop offset="0" stopColor={t.amb2} stopOpacity={1} />
-            <Stop offset="1" stopColor={t.amb2} stopOpacity={0} />
+            <Stop offset="0" {...svgStop(t.amb2)} />
+            <Stop offset="1" {...svgStop(t.amb2, 0)} />
           </RadialGradient>
         </Defs>
         <Ellipse cx={0} cy={0} rx={width * 1.1} ry={height * 0.55} fill="url(#a1)" />

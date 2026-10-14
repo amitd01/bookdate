@@ -11,7 +11,7 @@ import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 
 import { BookCover } from '@/components/BookCover';
 import { useTabInset } from '@/components/TabBar';
-import { Ambient, Avatar, Button, Eyebrow, Glass, Group, LargeTitle, Ring, Row, Segmented } from '@/components/ui';
+import { Ambient, Avatar, Button, Eyebrow, Glass, Group, LargeTitle, Ring, Row, Segmented, svgStop } from '@/components/ui';
 import { formatDistance } from '@/constants/distance';
 import { GENDERS, genreLabel } from '@/constants/genres';
 import { MODES, type LookingFor } from '@/constants/modes';
@@ -77,8 +77,8 @@ export default function Profile() {
           <Svg style={StyleSheet.absoluteFill} pointerEvents="none">
             <Defs>
               <RadialGradient id="heroGlow" cx="0.5" cy="0" r="0.7">
-                <Stop offset="0" stopColor={t.amb1} stopOpacity={1} />
-                <Stop offset="1" stopColor={t.amb1} stopOpacity={0} />
+                <Stop offset="0" {...svgStop(t.amb1)} />
+                <Stop offset="1" {...svgStop(t.amb1, 0)} />
               </RadialGradient>
             </Defs>
             <Rect width="100%" height="100%" fill="url(#heroGlow)" />

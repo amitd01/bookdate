@@ -170,7 +170,7 @@ export default function Discover() {
         hitSlop={4} onPress={() => setPicking(true)} style={{ flexShrink: 1 }}>
         <Glass strong fill={genre ? t.accSoft : undefined} border={genre ? 'transparent' : undefined} style={s.pill}>
           <Icon name="browse" size={14} color={genre ? t.accInk : t.ink} />
-          <Text style={[s.pillText, genre && { color: t.accInk }]} numberOfLines={1}>{genre ? `Browsing: ${genreLabel(genre)}` : 'For you'}</Text>
+          <Text style={[s.pillText, genre && { color: t.accInk }]} numberOfLines={1}>{genre ? genreLabel(genre) : 'For you'}</Text>
           <Icon name="chevronDown" size={12} color={genre ? t.accInk : t.ink} />
         </Glass>
       </Pressable>
