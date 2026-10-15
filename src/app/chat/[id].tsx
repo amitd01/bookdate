@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BookCover, CoverHalo } from '@/components/BookCover';
+import { BookCover } from '@/components/BookCover';
 import { Icon } from '@/components/Icon';
 import { OptionSheet, type Sheet } from '@/components/OptionSheet';
 import { ReportSheet } from '@/components/ReportSheet';
@@ -121,7 +121,6 @@ export default function Chat() {
   const header = match && (
     <View style={{ gap: space(3), marginBottom: space(2) }}>
       <Glass strong style={s.book}>
-        <View style={s.bookGlow}><CoverHalo uri={match.book_cover} opacity={0.5} /></View>
         <BookCover uri={match.book_cover} title={match.book_title} style={s.cover} radius={10} titleSize={14} />
         <View style={{ flex: 1, gap: 4 }}>
           <Eyebrow color={t.gold}>You both loved</Eyebrow>
@@ -211,7 +210,6 @@ const make = (t: Theme) => StyleSheet.create({
   avatarRing: { padding: 2, borderRadius: 21, borderWidth: 2, backgroundColor: t.bg },
   headerName: { fontFamily: fonts.uiHeavy, fontSize: 16 },
   book: { flexDirection: 'row', gap: space(3.5), padding: space(3.5), borderRadius: radius.xl },
-  bookGlow: { position: 'absolute', top: -30, left: -30, width: 140, height: 170 },
   cover: { width: 72, height: 108 },
   bio: { fontFamily: fonts.serifItalic, fontSize: 15, lineHeight: 19, color: t.ink2 },
   notice: { ...type.caption, color: t.ink3, textAlign: 'center', paddingHorizontal: space(4) },
