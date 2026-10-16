@@ -10,7 +10,7 @@ to the App Store and Google Play from any machine (no Mac required) through **EA
 
 ## Features
 
-| Area | What's in v1.1 |
+| Area | What's in v1.2 |
 |---|---|
 | **Onboarding** | Sign in with Apple (iOS), Google, or email → four chapters (You · Looking for · Your shelf · Ground rules): name, birthday (18+, locked afterwards), gender, **Dating or Just meeting people**, who to meet (genders for dating, age + distance sliders), ≥3 genres, bio, community rules → explainers before the location and notification prompts. Nothing is preselected. |
 | **Discover** | Gesture swipe deck (drag, fling, ✕/♥ buttons or screen-reader actions), "n readers near you loved this" gilt badge + first-time tip, **genre browsing**, an honest nearby-readers chip, cold-start banner and empty states |
@@ -19,7 +19,8 @@ to the App Store and Google Play from any machine (no Mac required) through **EA
 | **Book Dates** | New-match carousel, conversations led by the book, Date / Friend tags, unread dots, timestamps, tab badge, "Your turn" |
 | **Book club chat** | Realtime 1:1 chat headed by the shared book and partner's reading profile, book-specific prompts, day separators, push notifications |
 | **Personalisation** | Server-side feed ranking: chosen genres + learned genre affinity from swipes + nearby social proof + popularity + recency (pre-1990 books shown much less often, except when browsing Classics) + exploration |
-| **Profile** | Reader card, grouped preferences, invite, safety tips, legal links, support, sign out, **in-app account deletion** |
+| **Look & feel** | Visual refresh v2: glass chrome (expo-blur on iOS, solid on Android), rose→coral accent for dating and teal→cyan for friends, cover halos, Bricolage Grotesque + Instrument Serif, **light and dark mode** (follows the system), floating tab bar on iOS / Material 3 bar on Android. Tokens in `src/constants/theme.ts`, provider in `src/lib/theme.tsx` |
+| **Profile** | Reader card, books you loved lately, a Looking-for switch that re-themes the app instantly, grouped preferences, invite, safety tips, legal links, support, sign out, **in-app account deletion** |
 | **Safety** | Shield menu in every chat: safety tips, report (with details), **unmatch & block** (keeps your like on the book), safety notice, server-side profanity masking, 18+ and birthday lock enforced in DB, locations rounded to ~100 m and never exposed |
 | **Test data** | `scripts/synthetic-readers.sql` seeds 10,062 synthetic readers (3 genders × ages 18–60, 3–5 genres, 20–60 likes) across Mumbai and Bengaluru. They're visible only to accounts in `public.testers`; remove them with `scripts/synthetic-readers-remove.sql` |
 | **Updates** | Over-the-air JS updates via EAS Update (`npm run update:production -- "message"`) |

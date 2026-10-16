@@ -2,11 +2,11 @@
   "expo": {
     "name": "BookDate",
     "slug": "bookdate",
-    "version": "1.1.0",
+    "version": "1.2.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bookdate",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "platforms": [
       "ios",
       "android"
@@ -68,6 +68,7 @@
       "predictiveBackGestureEnabled": false
     },
     "plugins": [
+      "./plugins/withSceneLifecycle",
       "expo-router",
       "expo-apple-authentication",
       [
@@ -88,9 +89,12 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#FAF5EC",
+          "backgroundColor": "#F5F3F9",
           "image": "./assets/images/splash-icon.png",
-          "imageWidth": 160
+          "imageWidth": 160,
+          "dark": {
+            "backgroundColor": "#0C0A11"
+          }
         }
       ]
     ],

@@ -6,34 +6,41 @@
  *   - The nearby chip and cold-start banner say honestly how busy it is.
  * The deck is re-ranked whenever the screen gains focus or the app returns
  * to the foreground, so "readers near you" counts stay current.
+ * Visuals (refresh v2): glass top bar, the top cover's halo glowing behind the
+ * deck, the next card growing into place as you drag, gradient like button.
  */
 import * as Haptics from 'expo-haptics';
 import { router, useFocusEffect } from 'expo-router';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useRef, useState, type ReactNode } from 'react';
 import { ActivityIndicator, AppState, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { BookCover } from '@/components/BookCover';
+import { BookCover, CoverHalo } from '@/components/BookCover';
 import { GenreSheet } from '@/components/GenreSheet';
 import { Icon } from '@/components/Icon';
 import { MatchMoment } from '@/components/MatchMoment';
 import { SwipeCard, type SwipeCardHandle } from '@/components/SwipeCard';
-import { Button, EmptyState } from '@/components/ui';
+import { useTabInset } from '@/components/TabBar';
+import { Ambient, Button, EmptyState, Glass, Gradient, IconButton } from '@/components/ui';
 import { genreLabel } from '@/constants/genres';
-import { MODES } from '@/constants/modes';
-import { colors, radius, space, TOUCH, type } from '@/constants/theme';
+import { fonts, radius, space, type, type Theme } from '@/constants/theme';
 import { getFeed, getNearbyReaders, swipe } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import { inviteFriend } from '@/lib/invite';
 import { requestLocationPermission, syncLocation, type LocationState } from '@/lib/location';
 import { useOnce } from '@/lib/once';
+import { useStyles, useTheme } from '@/lib/theme';
 import type { FeedBook, NearbyBucket, NewMatch } from '@/lib/types';
 
 const REFILL_AT = 5;
 const NEARBY_LABEL: Record<NearbyBucket, string> = { none: 'Just you so far', few: 'A few readers nearby', '10+': '10+ readers nearby', '50+': '50+ readers nearby' };
+const NEARBY_SHORT: Record<NearbyBucket, string> = { none: 'Just you', few: 'A few nearby', '10+': '10+ nearby', '50+': '50+ nearby' };
 
 export default function Discover() {
-  const { profile } = useAuth();
-  const mode = MODES[profile?.looking_for ?? 'dating'];
+  const t = useTheme();
+  const s = useStyles(make);
+  const insets = useSafeAreaInsets();
+  const tabInset = useTabInset();
   const [deck, setDeck] = useState<FeedBook[]>([]);
   const [loading, setLoading] = useState(true);
   const [failed, setFailed] = useState(false);
@@ -45,6 +52,12 @@ export default function Discover() {
   const [moment, setMoment] = useState<{ book: FeedBook; matches: NewMatch[] } | null>(null);
   const [coachDone, finishCoach] = useOnce('coach.nearby.v1');
   const top = useRef<SwipeCardHandle>(null);
+  const drag = useSharedValue(0); // top card's x offset, drives the next card's reveal
+  const nextStyle = useAnimatedStyle(() => {
+    const p = Math.min(1, Math.abs(drag.get()) / 140);
+    return { transform: [{ translateY: 16 - 16 * p }, { scale: 0.92 + 0.08 * p }] };
+  });
+  const dimStyle = useAnimatedStyle(() => ({ opacity: 0.35 - 0.35 * Math.min(1, Math.abs(drag.get()) / 140) }));
   const fetching = useRef(false);
   const latest = useRef(0);
 
@@ -118,25 +131,36 @@ export default function Discover() {
     }
   };
 
+  /** Every state shares the ambient backdrop and safe-area padding. */
+  const screen = (children: ReactNode) => (
+    <View style={[s.screen, { paddingTop: insets.top + space(2), paddingBottom: tabInset }]}>
+      <Ambient />
+      {children}
+    </View>
+  );
+
   if (loc === 'undetermined') {
-    return (
+    return screen(
       <EmptyState icon="location" title="Find readers near you"
         body="BookDate matches you with readers close by (up to 15 km or 10 miles, you choose). Your exact location is never shown to anyone.">
-        <Button title="Allow location" color={mode.color} onPress={() => requestLocationPermission().then(() => syncLocation(false)).then(setLoc).catch(() => undefined)} />
+        <Button title="Allow location" onPress={() => requestLocationPermission()
+          // Show the deck as soon as permission is granted; the position uploads in the background.
+          .then((st) => { setLoc(st); if (st === 'granted') syncLocation(false).catch(() => undefined); })
+          .catch(() => undefined)} />
       </EmptyState>
     );
   }
   if (loc === 'denied') {
-    return (
+    return screen(
       <EmptyState icon="location" title="Location is off"
         body="BookDate only matches readers close to you (up to 15 km or 10 miles). Turn on location for BookDate in Settings to see who's nearby.">
-        <Button title="Open Settings" color={mode.color} onPress={() => Linking.openSettings()} />
+        <Button title="Open Settings" onPress={() => Linking.openSettings()} />
       </EmptyState>
     );
   }
-  if (loading) return <View style={s.center}><ActivityIndicator color={mode.color} /></View>;
+  if (loading) return screen(<View style={s.center}><ActivityIndicator color={t.acc} /></View>);
   if (failed && deck.length === 0) {
-    return (
+    return screen(
       <EmptyState icon="books" title="Couldn't reach BookDate" body="Check your internet connection and try again.">
         <Button title="Try again" variant="secondary" onPress={() => { setLoading(true); load('refresh', genre); }} />
       </EmptyState>
@@ -146,23 +170,26 @@ export default function Discover() {
   const header = (
     <View style={s.bar}>
       <Pressable accessibilityRole="button" accessibilityLabel={genre ? `Browsing ${genreLabel(genre)}. Change genre` : 'Browsing: for you. Change genre'}
-        hitSlop={4} style={[s.pill, genre && { backgroundColor: mode.soft, borderColor: mode.soft }]} onPress={() => setPicking(true)}>
-        <Icon name="browse" size={14} color={genre ? mode.color : colors.ink} />
-        <Text style={[s.pillText, genre && { color: mode.color }]} numberOfLines={1}>{genre ? `Browsing: ${genreLabel(genre)}` : 'For you'}</Text>
-        {!genre && <Icon name="chevronDown" size={12} color={colors.ink} />}
+        hitSlop={4} onPress={() => setPicking(true)} style={{ flexShrink: 1 }}>
+        <Glass strong fill={genre ? t.accSoft : undefined} border={genre ? 'transparent' : undefined} style={s.pill}>
+          <Icon name="browse" size={14} color={genre ? t.accInk : t.ink} />
+          <Text style={[s.pillText, genre && { color: t.accInk }]} numberOfLines={1}>{genre ? genreLabel(genre) : 'For you'}</Text>
+          <Icon name="chevronDown" size={12} color={genre ? t.accInk : t.ink} />
+        </Glass>
       </Pressable>
       {genre && (
         <Pressable accessibilityRole="button" accessibilityLabel="Back to For you" hitSlop={8} onPress={() => browse(null)} style={s.clear}>
-          <Icon name="close" size={20} color={mode.color} />
+          <Icon name="close" size={20} color={t.accInk} />
         </Pressable>
       )}
       <View style={{ flex: 1 }} />
       {nearby && (
         <View style={s.nearby} accessible accessibilityLabel={NEARBY_LABEL[nearby]}>
-          <Icon name="people" size={14} color={colors.gilt} />
-          <Text style={s.nearbyText}>{NEARBY_LABEL[nearby]}</Text>
+          <Icon name="people" size={13} color={t.gold} />
+          <Text style={s.nearbyText}>{NEARBY_SHORT[nearby]}</Text>
         </View>
       )}
+      <IconButton icon="search" label="Search for a book" size={40} onPress={() => router.push('/search')} />
     </View>
   );
 
@@ -174,86 +201,98 @@ export default function Discover() {
   );
 
   if (deck.length === 0) {
-    return (
-      <View style={s.screen}>
+    return screen(
+      <>
         {header}
-        <EmptyState icon="lamp"
+        <EmptyState icon="book"
           title={genre ? `That's every ${genreLabel(genre)} cover, for now.` : "You've read the whole shelf, for now."}
-          body="Every book you liked is a standing invitation: when a reader nearby loves it too, you'll match, even weeks from now.">
+          body="Every book you liked is a standing invitation. When a reader nearby loves it too, you'll match — even weeks from now.">
           {genre
-            ? <Button title="Back to For you" color={mode.color} onPress={() => browse(null)} />
-            : <Button title="Browse another genre" color={mode.color} onPress={() => setPicking(true)} />}
+            ? <Button title="Back to For you" onPress={() => browse(null)} />
+            : <Button title="Browse another genre" onPress={() => setPicking(true)} />}
           <Button title="Search for a book you love" variant="secondary" onPress={() => router.push('/search')} />
-          <Button title="Invite a friend who reads" variant="ghost" color={mode.color} onPress={inviteFriend} />
+          <Button title="Invite a friend who reads" variant="ghost" onPress={inviteFriend} />
         </EmptyState>
         {sheets}
-      </View>
+      </>
     );
   }
 
   const card = deck[0];
-  return (
-    <View style={s.screen}>
+  return screen(
+    <>
       {header}
       {nearby === 'none' && !bannerClosed && (
-        <View style={s.banner}>
-          <Icon name="people" size={18} color={colors.gilt} />
+        <Glass strong style={s.banner}>
+          <Icon name="people" size={18} color={t.gold} />
           <View style={{ flex: 1, gap: 2 }}>
-            <Text style={[type.body, { fontWeight: '700' }]}>You&apos;re one of the first readers here.</Text>
-            <Text style={type.small}>Your likes are saved. When someone nearby loves the same book, you&apos;ll match, even weeks from now.</Text>
+            <Text style={[type.label, { color: t.ink }]}>You&apos;re one of the first readers here.</Text>
+            <Text style={[type.caption, { color: t.ink2 }]}>Your likes are saved. When someone nearby loves the same book, you&apos;ll match, even weeks from now.</Text>
             <Pressable accessibilityRole="button" onPress={inviteFriend} hitSlop={8}><Text style={s.bannerLink}>Invite a reader</Text></Pressable>
           </View>
           <Pressable accessibilityRole="button" accessibilityLabel="Dismiss" hitSlop={12} onPress={() => setBannerClosed(true)}>
-            <Icon name="pass" size={16} color={colors.ink3} />
+            <Icon name="pass" size={16} color={t.ink3} />
           </Pressable>
-        </View>
+        </Glass>
       )}
       <View style={s.deck}>
-        {/* Render the next card underneath for a seamless reveal. */}
+        <CoverHalo key={`halo-${card.id}`} uri={card.cover_url} style={{ margin: -20 }} />
+        {/* The next card waits underneath and grows into place as the top card is dragged away. */}
         {deck[1] && (
-          <View style={[StyleSheet.absoluteFill, s.under]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
-            <BookCover uri={deck[1].cover_url} title={deck[1].title} author={deck[1].author} style={{ flex: 1 }} radius={radius.lg} />
-          </View>
+          <Animated.View style={[StyleSheet.absoluteFill, nextStyle]} importantForAccessibility="no-hide-descendants" accessibilityElementsHidden>
+            <BookCover uri={deck[1].cover_url} title={deck[1].title} author={deck[1].author} style={{ flex: 1 }} radius={radius.card} titleSize={40} />
+            <Animated.View style={[StyleSheet.absoluteFill, { backgroundColor: t.bg, borderRadius: radius.card }, dimStyle]} />
+          </Animated.View>
         )}
-        <SwipeCard key={card.id} ref={top} book={card} onSwiped={onSwiped} likeColor={mode.color} />
+        <SwipeCard key={card.id} ref={top} book={card} onSwiped={onSwiped} drag={drag} />
       </View>
 
       {!coachDone && card.nearby_likes > 0 && (
-        <Pressable style={s.coach} onPress={finishCoach} accessibilityRole="button" accessibilityHint="Dismisses this tip">
-          <Icon name="sparkles" size={16} color={colors.gilt} />
-          <Text style={[type.small, { color: colors.ink, flex: 1 }]}>
-            Readers near you loved this. <Text style={{ fontWeight: '700' }}>Like it to match with them instantly.</Text>
-          </Text>
+        <Pressable onPress={finishCoach} accessibilityRole="button" accessibilityHint="Dismisses this tip">
+          <Glass strong style={s.coach}>
+            <Icon name="sparkles" size={16} color={t.gold} />
+            <Text style={[type.caption, { color: t.ink, flex: 1 }]}>
+              Readers near you loved this. <Text style={{ fontFamily: fonts.uiBold }}>Like it to match with them instantly.</Text>
+            </Text>
+          </Glass>
         </Pressable>
       )}
 
       <View style={s.actions}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Pass" style={[s.round, { borderColor: colors.pass }]} onPress={() => top.current?.swipe(false)}>
-          <Icon name="pass" size={28} color={colors.pass} />
+        <Pressable accessibilityRole="button" accessibilityLabel="Pass" onPress={() => top.current?.swipe(false)} style={({ pressed }) => pressed && { transform: [{ scale: 0.94 }] }}>
+          <Glass strong style={s.pass}><Icon name="pass" size={26} color={t.pass} /></Glass>
         </Pressable>
-        <Pressable accessibilityRole="button" accessibilityLabel="Like" style={[s.round, { backgroundColor: mode.color, borderColor: mode.color }]} onPress={() => top.current?.swipe(true)}>
-          <Icon name="heart" size={30} color="#fff" />
+        <Pressable accessibilityRole="button" accessibilityLabel="Like" onPress={() => top.current?.swipe(true)} style={({ pressed }) => [s.likeHalo, pressed && { transform: [{ scale: 0.94 }] }]}>
+          <Gradient style={s.like}><Icon name="heart" size={32} color="#FFFFFF" /></Gradient>
         </Pressable>
       </View>
       {sheets}
-    </View>
+    </>
   );
 }
 
-const s = StyleSheet.create({
-  screen: { flex: 1, padding: space(4), paddingTop: space(2), gap: space(3) },
+const make = (t: Theme) => StyleSheet.create({
+  screen: { flex: 1, paddingHorizontal: space(5), gap: space(3) },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  bar: { flexDirection: 'row', alignItems: 'center', gap: space(1) },
-  pill: { minHeight: TOUCH - 8, flexDirection: 'row', alignItems: 'center', gap: space(1.5), paddingHorizontal: space(3), borderRadius: radius.pill, borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: colors.card, flexShrink: 1 },
-  pillText: { fontSize: 14, fontWeight: '600', color: colors.ink, flexShrink: 1 },
-  clear: { width: TOUCH - 8, height: TOUCH - 8, alignItems: 'center', justifyContent: 'center' },
-  nearby: { flexDirection: 'row', alignItems: 'center', gap: space(1), backgroundColor: colors.giltSoft, borderRadius: radius.pill, paddingHorizontal: space(2.5), paddingVertical: space(1.5) },
-  nearbyText: { fontSize: 13, fontWeight: '700', color: colors.gilt },
-  banner: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start', backgroundColor: colors.giltSoft, borderRadius: radius.md, padding: space(3) },
-  bannerLink: { color: colors.gilt, fontWeight: '700', fontSize: 14, marginTop: space(1) },
-  deck: { flex: 1 },
-  under: { transform: [{ scale: 0.95 }, { translateY: 10 }], opacity: 0.6 },
-  coach: { flexDirection: 'row', alignItems: 'center', gap: space(2), backgroundColor: colors.giltSoft, borderRadius: radius.md, padding: space(3) },
-  actions: { flexDirection: 'row', justifyContent: 'center', gap: space(10), paddingBottom: space(2) },
-  round: { width: 68, height: 68, borderRadius: 34, borderWidth: 2, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.card },
+  bar: { height: 44, flexDirection: 'row', alignItems: 'center', gap: space(2), zIndex: 1 },
+  pill: { height: 40, flexDirection: 'row', alignItems: 'center', gap: space(1.5), paddingHorizontal: space(3.5), borderRadius: radius.pill },
+  pillText: { fontFamily: fonts.uiBold, fontSize: 14, color: t.ink, flexShrink: 1 },
+  clear: { width: 36, height: 36, alignItems: 'center', justifyContent: 'center' },
+  nearby: {
+    height: 34, flexDirection: 'row', alignItems: 'center', gap: space(1.5), paddingHorizontal: space(3), borderRadius: radius.pill,
+    backgroundColor: t.goldSoft, borderWidth: 1, borderColor: 'rgba(255,176,32,0.45)',
+    shadowColor: 'rgb(255,176,32)', shadowOpacity: 0.25, shadowRadius: 18, shadowOffset: { width: 0, height: 0 },
+  },
+  nearbyText: { fontFamily: fonts.uiBold, fontSize: 13, color: t.gold },
+  banner: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start', borderRadius: radius.lg, padding: space(3) },
+  bannerLink: { color: t.accInk, fontFamily: fonts.uiBold, fontSize: 14, marginTop: space(1) },
+  deck: { flex: 1, marginTop: space(2) },
+  coach: { flexDirection: 'row', alignItems: 'center', gap: space(2), borderRadius: radius.lg, padding: space(3) },
+  actions: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 36, paddingVertical: space(1), marginBottom: 14 - space(3) },
+  pass: { width: 64, height: 64, borderRadius: 32, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+  likeHalo: {
+    padding: 6, borderRadius: 45, backgroundColor: t.accSoft,
+    shadowColor: t.acc, shadowOpacity: 0.55, shadowRadius: 22, shadowOffset: { width: 0, height: 10 },
+  },
+  like: { width: 78, height: 78, borderRadius: 39, borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' },
 });

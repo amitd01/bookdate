@@ -5,19 +5,22 @@
  * Safety lives behind the shield in the header: tips, report, unmatch.
  * Unmatching (or reporting) removes the person for good but keeps your like
  * on the book, so it can still match you with other readers.
+ * Look (refresh v2): glass header and composer, gradient bubbles for your
+ * messages, the book as a glowing context card at the top of the thread.
  */
-import { router, Stack, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Alert, FlatList, KeyboardAvoidingView, Linking, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookCover } from '@/components/BookCover';
 import { Icon } from '@/components/Icon';
 import { OptionSheet, type Sheet } from '@/components/OptionSheet';
 import { ReportSheet } from '@/components/ReportSheet';
+import { Ambient, Avatar, Eyebrow, Glass, Gradient, IconButton } from '@/components/ui';
 import { genreLabel } from '@/constants/genres';
 import { MODES } from '@/constants/modes';
-import { colors, keyboardBehavior, radius, space, TOUCH, type } from '@/constants/theme';
+import { fonts, getTheme, keyboardBehavior, radius, space, TOUCH, type, type Theme } from '@/constants/theme';
 import { analytics } from '@/lib/analytics';
 import { getMessages, reportAndUnmatch, sendMessage, subscribeToMessages, unmatch } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
@@ -25,6 +28,7 @@ import { config } from '@/lib/config';
 import { errorMessage } from '@/lib/errors';
 import { useInbox } from '@/lib/inbox';
 import { formatDay, formatTime, sameDay } from '@/lib/time';
+import { useStyles, useTheme } from '@/lib/theme';
 import type { Message, ReportReason } from '@/lib/types';
 
 const prompts = (title: string) => [
@@ -49,6 +53,11 @@ export default function Chat() {
   const me = session?.user.id;
   const match = matches.find((m) => m.match_id === id) ?? null;
   const mode = MODES[match?.mode ?? 'dating'];
+  // Colour follows the match's mode, not the reader's current one.
+  const app = useTheme();
+  const t = match && match.mode !== app.mode ? getTheme(app.scheme, match.mode) : app;
+  const s = useStyles(make);
+  const insets = useSafeAreaInsets();
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState(opener ?? '');
   const [sending, setSending] = useState(false);
@@ -111,18 +120,18 @@ export default function Chat() {
 
   const header = match && (
     <View style={{ gap: space(3), marginBottom: space(2) }}>
-      <View style={s.book}>
-        <BookCover uri={match.book_cover} title={match.book_title} style={s.cover} radius={6} />
+      <Glass strong style={s.book}>
+        <BookCover uri={match.book_cover} title={match.book_title} style={s.cover} radius={10} titleSize={14} />
         <View style={{ flex: 1, gap: 4 }}>
-          <Text style={type.overline}>You both loved</Text>
-          <Text style={type.h2} numberOfLines={2}>{match.book_title}</Text>
-          <Text style={type.small}>{match.other_name}, {match.other_age} · reads {match.other_genres.slice(0, 3).map(genreLabel).join(', ')}</Text>
-          {match.other_bio ? <Text style={[type.small, { fontStyle: 'italic' }]} numberOfLines={3}>“{match.other_bio}”</Text> : null}
+          <Eyebrow color={t.gold}>You both loved</Eyebrow>
+          <Text style={[type.bookM, { color: t.ink }]} numberOfLines={2}>{match.book_title}</Text>
+          <Text style={[type.caption, { fontSize: 13, color: t.ink2 }]}>{match.other_name}, {match.other_age} · reads {match.other_genres.slice(0, 3).map(genreLabel).join(', ')}</Text>
+          {match.other_bio ? <Text style={s.bio} numberOfLines={3}>“{match.other_bio}”</Text> : null}
         </View>
-      </View>
+      </Glass>
       <Text style={s.notice}>
         You matched on {new Date(match.created_at).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}. Meet in public, tell a friend, and remember BookDate will never ask for money.{' '}
-        <Text style={{ color: mode.color, fontWeight: '600' }} onPress={() => Linking.openURL(config.safetyUrl)} accessibilityRole="link">Safety tips</Text>
+        <Text style={{ color: t.accInk, fontFamily: fonts.uiSemi, textDecorationLine: 'underline' }} onPress={() => Linking.openURL(config.safetyUrl)} accessibilityRole="link">Safety tips</Text>
       </Text>
     </View>
   );
@@ -130,83 +139,91 @@ export default function Chat() {
   const bothWrote = new Set(messages.map((m) => m.sender_id)).size >= 2;
 
   return (
-    <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
-      <Stack.Screen options={{
-        headerTitle: () => (
-          <View style={{ alignItems: 'center' }}>
-            <Text style={[type.body, { fontWeight: '700' }]} numberOfLines={1}>{match?.other_name ?? ''}</Text>
-            {match && <Text style={type.small} numberOfLines={1}>{mode.noun} · {match.book_title}</Text>}
+    <View style={{ flex: 1 }}>
+      <Ambient />
+      <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1 }}>
+        <Glass strong style={[s.header, { paddingTop: insets.top + 4 }]}>
+          <IconButton icon="back" label="Back" size={40} onPress={() => router.back()} />
+          {match && (
+            <View style={[s.avatarRing, { borderColor: t.acc }]}><Avatar name={match.other_name} size={34} /></View>
+          )}
+          <View style={{ flex: 1 }}>
+            <Text style={[s.headerName, { color: t.ink }]} numberOfLines={1}>{match?.other_name ?? ''}</Text>
+            {match && <Text style={[type.caption, { color: t.ink2 }]} numberOfLines={1}>{mode.noun} · {match.book_title}</Text>}
           </View>
-        ),
-        headerRight: () => (
-          <Pressable onPress={safety} accessibilityRole="button" accessibilityLabel="Safety: tips, report or unmatch" hitSlop={8} style={s.shield}>
-            <Icon name="shield" size={22} color={mode.color} />
-          </Pressable>
-        ),
-      }} />
-      <KeyboardAvoidingView behavior={keyboardBehavior} keyboardVerticalOffset={100} style={{ flex: 1 }}>
+          <IconButton icon="shield" label="Safety: tips, report or unmatch" size={40} color={t.accInk} onPress={safety} />
+        </Glass>
         <FlatList
           style={{ flex: 1 }}
           data={withDays(messages).reverse()}
           inverted
           keyExtractor={(item) => item.key}
+          keyboardShouldPersistTaps="handled"
           contentContainerStyle={{ padding: space(4), gap: space(2) }}
           ListFooterComponent={header /* inverted: footer renders at the top */}
           renderItem={({ item }) => {
             if (item.kind === 'day') return <Text style={s.day}>{item.label}</Text>;
             const mine = item.m.sender_id === me;
-            return (
-              <View style={[s.bubble, mine ? [s.mine, { backgroundColor: mode.color }] : s.theirs]}>
-                <Text style={{ color: mine ? '#fff' : colors.ink, fontSize: 16 }}>{item.m.body}</Text>
+            const body = (
+              <>
+                <Text style={[s.bubbleText, { color: mine ? '#FFFFFF' : t.ink }]}>{item.m.body}</Text>
                 <Text style={[s.time, mine && { color: 'rgba(255,255,255,0.8)' }]}>{formatTime(item.m.created_at)}</Text>
-              </View>
+              </>
             );
+            return mine
+              ? <View style={[s.mineWrap, { shadowColor: t.acc }]}><Gradient colors={t.grad} style={[s.bubble, s.mine]}>{body}</Gradient></View>
+              : <View style={[s.bubble, s.theirs]}>{body}</View>;
           }}
         />
         {!bothWrote && match && (
           // flexGrow 0: a horizontal list would otherwise stretch to share the
           // screen with the messages list, ballooning the chips vertically.
           <View>
-            <Text style={s.ice}>Break the ice</Text>
+            <Eyebrow style={s.ice}>Break the ice</Eyebrow>
             <FlatList horizontal data={prompts(match.book_title)} keyExtractor={(p) => p} showsHorizontalScrollIndicator={false}
               style={s.prompts} keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ gap: space(2), paddingHorizontal: space(4), paddingBottom: space(2), alignItems: 'center' }}
               renderItem={({ item }) => (
-                <Pressable style={[s.prompt, { backgroundColor: mode.soft }]} onPress={() => setDraft(item)} accessibilityRole="button" accessibilityHint="Puts this question in the message box">
-                  <Text style={{ color: mode.color, fontWeight: '600' }}>{item}</Text>
+                <Pressable style={[s.prompt, { backgroundColor: t.accSoft, borderColor: t.accSoft }]} onPress={() => setDraft(item)} accessibilityRole="button" accessibilityHint="Puts this question in the message box">
+                  <Text style={{ color: t.accInk, fontFamily: fonts.uiSemi, fontSize: 14 }}>{item}</Text>
                 </Pressable>
               )} />
           </View>
         )}
-        <View style={s.composer}>
+        <Glass strong style={[s.composer, { paddingBottom: Math.max(insets.bottom, space(2.5)) }]}>
           <TextInput style={s.input} value={draft} onChangeText={setDraft} placeholder="Talk books…" accessibilityLabel="Message"
-            placeholderTextColor={colors.ink3} multiline maxLength={2000} />
+            placeholderTextColor={t.ink3} multiline maxLength={2000} />
           <Pressable onPress={() => send()} disabled={!draft.trim() || sending} accessibilityRole="button" accessibilityLabel="Send"
-            style={[s.send, { backgroundColor: mode.color }, !draft.trim() && { opacity: 0.4 }]}>
-            <Icon name="send" size={20} color="#fff" />
+            style={!draft.trim() && { opacity: 0.4 }}>
+            <Gradient colors={t.grad} style={s.send}><Icon name="send" size={20} color="#FFFFFF" /></Gradient>
           </Pressable>
-        </View>
+        </Glass>
       </KeyboardAvoidingView>
       <OptionSheet sheet={sheet} onClose={() => setSheet(null)} />
       <ReportSheet name={reporting ? match?.other_name ?? null : null} onSubmit={submitReport} onClose={() => setReporting(false)} />
-    </SafeAreaView>
+    </View>
   );
 }
 
-const s = StyleSheet.create({
-  book: { flexDirection: 'row', gap: space(3), padding: space(3), backgroundColor: colors.card, borderRadius: radius.md, borderWidth: 1, borderColor: colors.line },
+const make = (t: Theme) => StyleSheet.create({
+  header: { flexDirection: 'row', alignItems: 'center', gap: space(2.5), paddingHorizontal: space(3), paddingBottom: space(2.5), borderWidth: 0, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: t.line },
+  avatarRing: { padding: 2, borderRadius: 21, borderWidth: 2, backgroundColor: t.bg },
+  headerName: { fontFamily: fonts.uiHeavy, fontSize: 16 },
+  book: { flexDirection: 'row', gap: space(3.5), padding: space(3.5), borderRadius: radius.xl },
   cover: { width: 72, height: 108 },
-  notice: { ...type.small, textAlign: 'center', paddingHorizontal: space(4) },
-  shield: { width: TOUCH, height: TOUCH, alignItems: 'center', justifyContent: 'center' },
-  day: { ...type.small, fontWeight: '600', textAlign: 'center', paddingVertical: space(2) },
-  bubble: { maxWidth: '80%', paddingVertical: space(2.5), paddingHorizontal: space(3.5), borderRadius: 18, gap: 2 },
-  mine: { alignSelf: 'flex-end', borderBottomRightRadius: 4 },
-  theirs: { alignSelf: 'flex-start', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.lineStrong, borderBottomLeftRadius: 4 },
-  time: { fontSize: 11, color: colors.ink3, alignSelf: 'flex-end' },
-  ice: { ...type.overline, color: colors.ink3, paddingHorizontal: space(4), paddingBottom: space(1.5) },
+  bio: { fontFamily: fonts.serifItalic, fontSize: 15, lineHeight: 19, color: t.ink2 },
+  notice: { ...type.caption, color: t.ink3, textAlign: 'center', paddingHorizontal: space(4) },
+  day: { fontFamily: fonts.uiBold, fontSize: 12, color: t.ink3, textAlign: 'center', paddingVertical: space(2) },
+  bubble: { maxWidth: '78%', paddingVertical: 10, paddingHorizontal: 14, borderRadius: 22, gap: 2 },
+  bubbleText: { fontFamily: fonts.ui, fontSize: 15.5, lineHeight: 21 },
+  mineWrap: { alignSelf: 'flex-end', maxWidth: '78%', shadowOpacity: 0.3, shadowRadius: 12, shadowOffset: { width: 0, height: 6 } },
+  mine: { maxWidth: '100%', borderBottomRightRadius: 6 },
+  theirs: { alignSelf: 'flex-start', backgroundColor: t.surface, borderWidth: 1, borderColor: t.line, borderBottomLeftRadius: 6 },
+  time: { fontFamily: fonts.ui, fontSize: 11, color: t.ink3, alignSelf: 'flex-end' },
+  ice: { paddingHorizontal: space(4), paddingBottom: space(1.5) },
   prompts: { flexGrow: 0, flexShrink: 0 },
-  prompt: { minHeight: TOUCH, justifyContent: 'center', borderRadius: radius.pill, paddingHorizontal: space(4) },
-  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: space(2), padding: space(3), borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.line, backgroundColor: colors.sunken },
-  input: { flex: 1, minHeight: TOUCH, maxHeight: 120, backgroundColor: colors.card, borderRadius: 22, borderWidth: 1, borderColor: colors.lineStrong, paddingHorizontal: space(4), paddingVertical: space(2.5), fontSize: 16, color: colors.ink },
+  prompt: { height: 40, justifyContent: 'center', borderRadius: radius.pill, borderWidth: 1, paddingHorizontal: space(4) },
+  composer: { flexDirection: 'row', alignItems: 'flex-end', gap: space(2), paddingTop: space(2.5), paddingHorizontal: space(3), borderWidth: 0, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.line },
+  input: { flex: 1, minHeight: TOUCH, maxHeight: 120, backgroundColor: t.surface, borderRadius: 22, borderWidth: 1, borderColor: t.line, paddingHorizontal: space(4), paddingTop: 11, paddingBottom: 11, fontFamily: fonts.ui, fontSize: 16, color: t.ink },
   send: { width: TOUCH, height: TOUCH, borderRadius: TOUCH / 2, alignItems: 'center', justifyContent: 'center' },
 });

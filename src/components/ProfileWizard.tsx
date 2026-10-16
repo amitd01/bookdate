@@ -7,23 +7,25 @@
  *     before the location and notification permission prompts.
  *   - "edit": the same questions grouped on one page; birthday is read-only
  *     (locked after onboarding, enforced by the database).
+ * Picking a mode previews its accent across the app right away.
  */
 import DateTimePicker, { DateTimePickerAndroid } from '@react-native-community/datetimepicker';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { KeyboardAvoidingView, Linking, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Icon, type IconName } from '@/components/Icon';
 import { Slider } from '@/components/Slider';
-import { Button, Chip, ChipGroup, Field, Label } from '@/components/ui';
+import { Ambient, Button, Chip, ChipGroup, Field, Label } from '@/components/ui';
 import { DISTANCE_MAX, defaultUnit, formatDistance, toKm, toUnit, type DistanceUnit } from '@/constants/distance';
 import { GENDERS, GENRES, type Gender } from '@/constants/genres';
 import { MODES, type LookingFor } from '@/constants/modes';
-import { colors, keyboardBehavior, radius, space, TOUCH, type } from '@/constants/theme';
+import { fonts, getTheme, keyboardBehavior, radius, space, TOUCH, type, type Theme } from '@/constants/theme';
 import { config } from '@/lib/config';
 import { errorMessage } from '@/lib/errors';
 import { requestLocationPermission } from '@/lib/location';
 import { requestPushPermission } from '@/lib/push';
+import { usePreviewMode, useStyles, useTheme } from '@/lib/theme';
 import { ageOf, fromISODate, toISODate } from '@/lib/time';
 import type { ProfileInput } from '@/lib/types';
 
@@ -73,7 +75,13 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const set = (patch: Partial<Draft>) => setP((cur) => ({ ...cur, ...patch }));
-  const tone = p.looking_for ? MODES[p.looking_for] : MODES.dating;
+  const t = useTheme();
+  const s = useStyles(make);
+  const previewMode = usePreviewMode();
+  const tone = MODES[p.looking_for ?? 'dating'];
+  // Re-theme as soon as a mode is picked; drop the preview on leaving (e.g. Cancel).
+  useEffect(() => { if (p.looking_for) previewMode(p.looking_for); }, [p.looking_for, previewMode]);
+  useEffect(() => () => previewMode(null), [previewMode]);
   const unit = p.distance_unit;
   const dating = p.looking_for !== 'friends';
 
@@ -87,8 +95,8 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
       value: p.birthdate ? fromISODate(p.birthdate) : yearsAgo(25), mode: 'date', maximumDate: yearsAgo(18), minimumDate: yearsAgo(100),
       onChange: (e, d) => { if (e.type === 'set' && d) pickBirthday(d); },
     })}>
-      <Text style={[type.body, !p.birthdate && { color: colors.ink3 }]}>{p.birthdate ? prettyDate(p.birthdate) : 'Choose your birthday'}</Text>
-      <Text style={{ color: tone.color, fontWeight: '600' }}>{p.birthdate ? 'Change' : 'Choose'}</Text>
+      <Text style={[s.body, !p.birthdate && { color: t.ink3 }]}>{p.birthdate ? prettyDate(p.birthdate) : 'Choose your birthday'}</Text>
+      <Text style={{ color: t.accInk, fontFamily: fonts.uiSemi }}>{p.birthdate ? 'Change' : 'Choose'}</Text>
     </Pressable>
   );
 
@@ -107,8 +115,8 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
       body: (
         <>
           {birthdayPicker}
-          {!p.birthdate && Platform.OS === 'ios' ? <Text style={type.small}>Scroll to your date of birth.</Text> : null}
-          {p.birthdate ? <Text style={[type.h2, { color: tone.color }]} accessibilityLiveRegion="polite">You&apos;re {ageOf(p.birthdate)}.</Text> : null}
+          {!p.birthdate && Platform.OS === 'ios' ? <Text style={s.small}>Scroll to your date of birth.</Text> : null}
+          {p.birthdate ? <Text style={[s.h2, { color: t.accInk }]} accessibilityLiveRegion="polite">You&apos;re {ageOf(p.birthdate)}.</Text> : null}
         </>
       ),
     },
@@ -119,7 +127,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
         <>
           <Label>I am a</Label>
           <ChipGroup>
-            {GENDERS.map((g) => <Chip radio key={g.value} label={g.label} color={tone.color} selected={p.gender === g.value} onPress={() => set({ gender: g.value })} />)}
+            {GENDERS.map((g) => <Chip radio key={g.value} label={g.label} selected={p.gender === g.value} onPress={() => set({ gender: g.value })} />)}
           </ChipGroup>
         </>
       ),
@@ -147,7 +155,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
               <Label>Interested in</Label>
               <ChipGroup>
                 {GENDERS.map((g) => (
-                  <Chip key={g.value} label={g.label} color={tone.color} selected={p.interested_in.includes(g.value)}
+                  <Chip key={g.value} label={g.label} selected={p.interested_in.includes(g.value)}
                     onPress={() => set({ interested_in: toggle<Gender>(p.interested_in, g.value) })} />
                 ))}
               </ChipGroup>
@@ -157,21 +165,21 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
             <Label>Age range</Label>
             <Text style={s.value}>{p.age_min} – {p.age_max}</Text>
           </View>
-          <Slider values={[p.age_min, p.age_max]} min={18} max={99} color={tone.color} labels={['Youngest age', 'Oldest age']}
+          <Slider values={[p.age_min, p.age_max]} min={18} max={99} labels={['Youngest age', 'Oldest age']}
             describe={(v) => `${v} years`} onChange={([age_min, age_max]) => set({ age_min, age_max })} />
           <View style={s.row}>
             <Label>Distance</Label>
             <Text style={s.value}>Up to {formatDistance(p.max_km, unit)}</Text>
           </View>
-          <Slider values={[toUnit(p.max_km, unit)]} min={1} max={DISTANCE_MAX[unit]} color={tone.color} labels={['Maximum distance']}
+          <Slider values={[toUnit(p.max_km, unit)]} min={1} max={DISTANCE_MAX[unit]} labels={['Maximum distance']}
             describe={(v) => `${v} ${unit === 'mi' ? 'miles' : 'kilometres'}`} onChange={([n]) => set({ max_km: toKm(n, unit) })} />
           <View style={s.row}>
-            <Text style={[type.small, { flex: 1 }]}>Always local, so a coffee‑shop book club is easy.</Text>
+            <Text style={[s.small, { flex: 1 }]}>Always local, so a coffee‑shop book club is easy.</Text>
             {/* Switching units keeps roughly the same distance, rounded to a whole km / mile. */}
             <View style={s.units} accessibilityRole="radiogroup">
               {UNITS.map((u) => (
                 <Pressable key={u.value} hitSlop={8} accessibilityRole="radio" accessibilityLabel={u.label}
-                  accessibilityState={{ checked: unit === u.value }} style={[s.unit, unit === u.value && { backgroundColor: tone.color }]}
+                  accessibilityState={{ checked: unit === u.value }} style={[s.unit, unit === u.value && { backgroundColor: t.acc }]}
                   onPress={() => set({ distance_unit: u.value, max_km: toKm(toUnit(p.max_km, u.value), u.value) })}>
                   <Text style={[s.unitText, unit === u.value && { color: '#fff' }]}>{u.value}</Text>
                 </Pressable>
@@ -188,7 +196,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
       body: (
         <ChipGroup>
           {GENRES.map((g) => (
-            <Chip key={g.slug} label={g.label} color={tone.color} selected={p.genres.includes(g.slug)}
+            <Chip key={g.slug} label={g.label} selected={p.genres.includes(g.slug)}
               onPress={() => set({ genres: toggle(p.genres, g.slug) })} />
           ))}
         </ChipGroup>
@@ -208,18 +216,18 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
         <>
           {RULES.map((r) => (
             <View key={r} style={s.rule}>
-              <Icon name="check" size={16} color={tone.color} />
-              <Text style={[type.body, { flex: 1 }]}>{r}</Text>
+              <Icon name="check" size={16} color={t.accInk} />
+              <Text style={[s.body, { flex: 1 }]}>{r}</Text>
             </View>
           ))}
           <Pressable style={s.agree} onPress={() => setAgreed(!agreed)} accessibilityRole="checkbox" accessibilityState={{ checked: agreed }}>
-            <View style={[s.checkbox, agreed && { backgroundColor: tone.color, borderColor: tone.color }]}>
+            <View style={[s.checkbox, agreed && { backgroundColor: t.acc, borderColor: t.acc }]}>
               {agreed && <Icon name="check" size={14} color="#fff" />}
             </View>
-            <Text style={[type.small, { flex: 1, color: colors.ink }]}>
+            <Text style={[s.small, { flex: 1, color: t.ink }]}>
               I&apos;m 18 or older and agree to the{' '}
-              <Text style={[s.link, { color: tone.color }]} onPress={() => Linking.openURL(config.termsUrl)}>Terms & Community Rules</Text> and{' '}
-              <Text style={[s.link, { color: tone.color }]} onPress={() => Linking.openURL(config.privacyUrl)}>Privacy Policy</Text>.
+              <Text style={s.link} onPress={() => Linking.openURL(config.termsUrl)}>Terms & Community Rules</Text> and{' '}
+              <Text style={s.link} onPress={() => Linking.openURL(config.privacyUrl)}>Privacy Policy</Text>.
               There is zero tolerance for abusive or objectionable content.
             </Text>
           </Pressable>
@@ -230,14 +238,14 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
       key: 'location', chapter: 3, title: 'Find readers near you',
       valid: true,
       action: { title: 'Allow location', run: requestLocationPermission },
-      body: <Explainer icon="location" color={tone.color}
+      body: <Explainer icon="location"
         text={`BookDate matches you with readers within ${formatDistance(p.max_km, unit)}. Your location is rounded to about 100 m and never shown to anyone.`} />,
     },
     {
       key: 'notifications', chapter: 3, title: "Don't miss a match",
       valid: true,
       action: { title: 'Turn on notifications', run: requestPushPermission },
-      body: <Explainer icon="bell" color={tone.color}
+      body: <Explainer icon="bell"
         text="We'll tell you when someone nearby loves the same book, and when they reply. You can turn this off anytime in Settings." />,
     },
   ];
@@ -263,7 +271,7 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
     }
   };
 
-  if (editing) return <EditForm steps={steps} birthdate={p.birthdate} color={tone.color} saving={saving} error={error} onSave={save} />;
+  if (editing) return <EditForm steps={steps} birthdate={p.birthdate} saving={saving} error={error} onSave={save} />;
 
   const current = steps[step];
   const isLast = step === steps.length - 1;
@@ -271,32 +279,33 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
 
   return (
     <SafeAreaView style={s.safe} edges={['top', 'bottom']}>
+      <Ambient />
       <KeyboardAvoidingView behavior={keyboardBehavior} style={{ flex: 1 }}>
         <View style={s.progress} accessible accessibilityLabel={`Step ${step + 1} of ${steps.length}: ${CHAPTERS[current.chapter]}`}>
           {CHAPTERS.map((c, i) => (
             <View key={c} style={{ flex: 1, gap: space(1) }}>
-              <View style={[s.bar, i <= current.chapter && { backgroundColor: tone.color }]} />
-              <Text style={[s.chapter, i === current.chapter && { color: tone.color }]} numberOfLines={1}>{c}</Text>
+              <View style={[s.bar, i <= current.chapter && { backgroundColor: t.acc }]} />
+              <Text style={[s.chapter, i === current.chapter && { color: t.accInk }]} numberOfLines={1}>{c}</Text>
             </View>
           ))}
         </View>
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
-          <Text style={type.title} accessibilityRole="header">{current.title}</Text>
-          {current.subtitle ? <Text style={[type.body, { color: colors.inkMuted }]}>{current.subtitle}</Text> : null}
+          <Text style={s.title} accessibilityRole="header">{current.title}</Text>
+          {current.subtitle ? <Text style={[s.body, { color: t.ink2 }]}>{current.subtitle}</Text> : null}
           {current.body}
-          {error ? <Text style={{ color: colors.danger }} accessibilityLiveRegion="polite">{error}</Text> : null}
+          {error ? <Text style={[s.body, { color: t.danger }]} accessibilityLiveRegion="polite">{error}</Text> : null}
         </ScrollView>
         <View style={s.footer}>
           {current.action ? (
             <>
-              <Button title="Not now" variant="ghost" color={tone.color} onPress={next} disabled={saving} style={{ flex: 1 }} />
-              <Button title={current.action.title} color={tone.color} loading={saving} style={{ flex: 2 }}
+              <Button title="Not now" variant="ghost" onPress={next} disabled={saving} style={{ flex: 1 }} />
+              <Button title={current.action.title} loading={saving} style={{ flex: 2 }}
                 onPress={() => current.action!.run().catch(() => undefined).finally(next)} />
             </>
           ) : (
             <>
-              {step > 0 && <Button title="Back" variant="ghost" color={tone.color} onPress={() => setStep(step - 1)} style={{ flex: 1 }} />}
-              <Button title={isLast ? tone.finish : 'Continue'} color={tone.color} onPress={next}
+              {step > 0 && <Button title="Back" variant="ghost" onPress={() => setStep(step - 1)} style={{ flex: 1 }} />}
+              <Button title={isLast ? tone.finish : 'Continue'} onPress={next}
                 disabled={!current.valid} loading={saving} style={{ flex: 2 }} />
             </>
           )}
@@ -307,9 +316,11 @@ export function ProfileWizard({ mode, initial, onSubmit }: Props) {
 }
 
 /** Edit profile: the same questions grouped on one scrolling page, birthday read-only. */
-function EditForm({ steps, birthdate, color, saving, error, onSave }: {
-  steps: Step[]; birthdate: string | null; color: string; saving: boolean; error: string; onSave: () => void;
+function EditForm({ steps, birthdate, saving, error, onSave }: {
+  steps: Step[]; birthdate: string | null; saving: boolean; error: string; onSave: () => void;
 }) {
+  const t = useTheme();
+  const s = useStyles(make);
   const by = (key: string) => steps.find((x) => x.key === key)!;
   const groups: { title: string; keys: string[] }[] = [
     { title: 'About you', keys: ['name', 'gender'] },
@@ -323,78 +334,88 @@ function EditForm({ steps, birthdate, color, saving, error, onSave }: {
         <ScrollView contentContainerStyle={s.content} keyboardShouldPersistTaps="handled">
           {groups.map((g) => (
             <View key={g.title} style={s.section}>
-              <Text style={type.h2} accessibilityRole="header">{g.title}</Text>
+              <Text style={s.h2} accessibilityRole="header">{g.title}</Text>
               {g.keys.map((k) => (
                 <View key={k} style={s.section}>
-                  {k === 'mode' && <Text style={type.small}>{by(k).subtitle}</Text>}
+                  {k === 'mode' && <Text style={s.small}>{by(k).subtitle}</Text>}
                   {by(k).body}
                   {k === 'name' && birthdate && (
                     <View style={{ gap: space(1.5) }}>
                       <Label>Birthday</Label>
-                      <Text style={type.body}>{prettyDate(birthdate)}</Text>
-                      <Text style={type.small}>Birthdays can&apos;t be changed in the app. Wrong? Contact support from your Profile.</Text>
+                      <Text style={s.body}>{prettyDate(birthdate)}</Text>
+                      <Text style={s.small}>Birthdays can&apos;t be changed in the app. Wrong? Contact support from your Profile.</Text>
                     </View>
                   )}
                 </View>
               ))}
             </View>
           ))}
-          {error ? <Text style={{ color: colors.danger }} accessibilityLiveRegion="polite">{error}</Text> : null}
+          {error ? <Text style={[s.body, { color: t.danger }]} accessibilityLiveRegion="polite">{error}</Text> : null}
         </ScrollView>
         <View style={s.footer}>
-          <Button title="Save" color={color} onPress={onSave} disabled={!valid} loading={saving} style={{ flex: 1 }} />
+          <Button title="Save" onPress={onSave} disabled={!valid} loading={saving} style={{ flex: 1 }} />
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
+/** A mode option, drawn in that mode's own accent. */
 function ModeCard({ mode, selected, onPress }: { mode: LookingFor; selected: boolean; onPress: () => void }) {
+  const app = useTheme();
+  const s = useStyles(make);
   const m = MODES[mode];
+  const t = getTheme(app.scheme, mode);
   return (
     <Pressable accessibilityRole="radio" accessibilityState={{ checked: selected }} onPress={onPress}
-      style={[s.mode, selected && { borderColor: m.color, borderWidth: 2 }]}>
-      <View style={[s.modeIcon, { backgroundColor: m.soft }]}><Icon name={mode === 'friends' ? 'people' : 'heart'} size={20} color={m.color} /></View>
+      style={[s.mode, selected && { borderColor: t.acc, borderWidth: 2 }]}>
+      <View style={[s.modeIcon, { backgroundColor: t.accSoft }]}><Icon name={mode === 'friends' ? 'people' : 'heart'} size={20} color={t.accInk} /></View>
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={[type.body, { fontWeight: '700' }]}>{m.label}</Text>
-        <Text style={type.small}>{m.blurb}</Text>
+        <Text style={[s.body, { fontFamily: fonts.uiBold }]}>{m.label}</Text>
+        <Text style={s.small}>{m.blurb}</Text>
       </View>
-      <View style={[s.radio, selected && { borderColor: m.color, borderWidth: 7 }]} />
+      <View style={[s.radio, selected && { borderColor: t.acc, borderWidth: 7 }]} />
     </Pressable>
   );
 }
 
-function Explainer({ icon, text, color }: { icon: IconName; text: string; color: string }) {
+function Explainer({ icon, text }: { icon: IconName; text: string }) {
+  const t = useTheme();
+  const s = useStyles(make);
   return (
     <View style={s.explainer}>
-      <View style={s.explainerIcon}><Icon name={icon} size={40} color={color} /></View>
-      <Text style={[type.body, { textAlign: 'center', color: colors.inkMuted }]}>{text}</Text>
+      <View style={s.explainerIcon}><Icon name={icon} size={40} color={t.accInk} /></View>
+      <Text style={[s.body, { textAlign: 'center', color: t.ink2 }]}>{text}</Text>
     </View>
   );
 }
 
-const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.paper },
+const make = (t: Theme) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: t.bg },
+  title: { ...type.hero, color: t.ink },
+  h2: { ...type.title, color: t.ink },
+  body: { ...type.body, color: t.ink },
+  small: { ...type.bodySm, color: t.ink2 },
   content: { padding: space(6), gap: space(5) },
   section: { gap: space(4) },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space(3) },
-  value: { ...type.body, fontWeight: '600' },
+  value: { ...type.body, fontFamily: fonts.uiSemi, color: t.ink },
   bio: { minHeight: 96, textAlignVertical: 'top' },
-  dateButton: { minHeight: TOUCH + 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.card, borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.md, padding: space(3.5) },
-  units: { flexDirection: 'row', borderWidth: 1, borderColor: colors.lineStrong, borderRadius: radius.pill, padding: 2 },
+  dateButton: { minHeight: TOUCH + 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: t.surface, borderWidth: 1, borderColor: t.lineStrong, borderRadius: radius.md, padding: space(3.5) },
+  units: { flexDirection: 'row', borderWidth: 1, borderColor: t.lineStrong, borderRadius: radius.pill, padding: 2 },
   unit: { paddingHorizontal: space(3.5), paddingVertical: space(1.5), borderRadius: radius.pill },
-  unitText: { ...type.small, fontWeight: '600' },
+  unitText: { ...type.bodySm, fontFamily: fonts.uiSemi, color: t.ink2 },
   rule: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start' },
   agree: { flexDirection: 'row', gap: space(3), alignItems: 'flex-start', paddingVertical: space(2) },
-  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: colors.lineStrong, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
-  link: { fontWeight: '600' },
+  checkbox: { width: 24, height: 24, borderRadius: 6, borderWidth: 2, borderColor: t.lineStrong, alignItems: 'center', justifyContent: 'center', marginTop: 2 },
+  link: { fontFamily: fonts.uiSemi, color: t.accInk, textDecorationLine: 'underline' },
   progress: { flexDirection: 'row', gap: space(2), paddingHorizontal: space(6), paddingTop: space(3) },
-  bar: { height: 4, borderRadius: 2, backgroundColor: colors.line },
-  chapter: { fontSize: 11, fontWeight: '600', color: colors.ink3 },
+  bar: { height: 4, borderRadius: 2, backgroundColor: t.line },
+  chapter: { fontFamily: fonts.uiSemi, fontSize: 11, color: t.ink3 },
   footer: { flexDirection: 'row', gap: space(3), padding: space(4), paddingHorizontal: space(6) },
-  mode: { flexDirection: 'row', alignItems: 'center', gap: space(3), padding: space(4), borderRadius: radius.md, borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: colors.card },
-  modeIcon: { width: 40, height: 40, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: colors.lineStrong },
+  mode: { flexDirection: 'row', alignItems: 'center', gap: space(3), padding: space(4), borderRadius: radius.lg, borderWidth: 1, borderColor: t.line, backgroundColor: t.surface },
+  modeIcon: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  radio: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: t.lineStrong },
   explainer: { alignItems: 'center', gap: space(5), paddingVertical: space(6) },
-  explainerIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line, alignItems: 'center', justifyContent: 'center' },
+  explainerIcon: { width: 96, height: 96, borderRadius: 48, backgroundColor: t.accSoft, alignItems: 'center', justifyContent: 'center' },
 });

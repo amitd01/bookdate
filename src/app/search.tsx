@@ -2,30 +2,35 @@
  * Search for a specific book (#9). Results come from the BookDate catalogue
  * first, then Open Library for anything not in it yet. The heart likes a
  * book directly, exactly like a right swipe, so it can match instantly.
+ * Look (refresh v2): back button + glass search field that glows when focused;
+ * serif titles; the heart fills with the accent gradient once liked.
  */
 import * as Haptics from 'expo-haptics';
-import { Stack } from 'expo-router';
+import { router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, SectionList, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { BookCover } from '@/components/BookCover';
 import { Icon } from '@/components/Icon';
 import { MatchMoment } from '@/components/MatchMoment';
 import { nearbyText } from '@/components/SwipeCard';
-import { MODES } from '@/constants/modes';
-import { colors, radius, space, TOUCH, type } from '@/constants/theme';
+import { Ambient, Eyebrow, Glass, Gradient, IconButton } from '@/components/ui';
+import { fonts, radius, space, TOUCH, type, type Theme } from '@/constants/theme';
 import { analytics } from '@/lib/analytics';
 import { addBook, searchBooks, swipe } from '@/lib/api';
-import { useAuth } from '@/lib/auth';
 import { errorMessage } from '@/lib/errors';
 import { searchOpenLibrary } from '@/lib/openlibrary';
+import { useStyles, useTheme } from '@/lib/theme';
 import type { NewMatch, SearchBook } from '@/lib/types';
 
 const DEBOUNCE_MS = 350;
 
 export default function Search() {
-  const { profile } = useAuth();
-  const mode = MODES[profile?.looking_for ?? 'dating'];
+  const t = useTheme();
+  const s = useStyles(make);
+  const insets = useSafeAreaInsets();
+  const [focused, setFocused] = useState(false);
   const [query, setQuery] = useState('');
   const [catalogue, setCatalogue] = useState<SearchBook[]>([]);
   const [openLibrary, setOpenLibrary] = useState<SearchBook[]>([]);
@@ -81,19 +86,26 @@ export default function Search() {
 
   return (
     <View style={{ flex: 1 }}>
-      <Stack.Screen options={{ title: 'Search' }} />
-      <View style={s.searchBox}>
-        <Icon name="search" size={16} color={colors.ink3} />
-        <TextInput style={s.input} value={query} onChangeText={setQuery} autoFocus placeholder="Title or author"
-          placeholderTextColor={colors.ink3} returnKeyType="search" autoCorrect={false} accessibilityLabel="Search by title or author" />
-        {busy && <ActivityIndicator color={mode.color} />}
+      <Ambient />
+      <View style={[s.top, { paddingTop: insets.top + space(2) }]}>
+        <IconButton icon="back" label="Back" onPress={() => router.back()} />
+        <View style={[s.ring, focused && { borderColor: t.accSoft }]}>
+          <Glass strong style={[s.searchBox, focused && { borderColor: t.acc, borderWidth: 1.5 }]}>
+            <Icon name="search" size={16} color={t.ink3} />
+            <TextInput style={s.input} value={query} onChangeText={setQuery} autoFocus placeholder="Title or author"
+              onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+              placeholderTextColor={t.ink3} returnKeyType="search" autoCorrect={false} accessibilityLabel="Search by title or author" />
+            {busy && <ActivityIndicator color={t.acc} />}
+          </Glass>
+        </View>
       </View>
       <SectionList
         sections={sections}
         keyExtractor={(b) => b.ol_key}
         keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ paddingBottom: space(10) }}
-        renderSectionHeader={({ section }) => <Text style={s.section} accessibilityRole="header">{section.title}</Text>}
+        stickySectionHeadersEnabled={false}
+        contentContainerStyle={{ paddingBottom: insets.bottom + space(10) }}
+        renderSectionHeader={({ section }) => <Eyebrow style={s.section}>{section.title} · {section.data.length}</Eyebrow>}
         ListEmptyComponent={
           <Text style={[type.body, s.hint]}>
             {q.length < 2 ? 'Search for a book you love. If a reader nearby loved it too, liking it matches you instantly.'
@@ -102,17 +114,18 @@ export default function Search() {
         }
         renderItem={({ item: b }) => (
           <View style={s.row}>
-            <BookCover uri={b.cover_url} title={b.title} author={b.author} style={s.cover} radius={4} />
+            <BookCover uri={b.cover_url} title={b.title} author={b.author} style={s.cover} radius={radius.xs} titleSize={10} />
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={[type.body, { fontWeight: '600' }]} numberOfLines={2}>{b.title}</Text>
-              <Text style={type.small} numberOfLines={1}>{[b.author, b.first_published].filter(Boolean).join(' · ')}</Text>
+              <Text style={[type.bookS, { color: t.ink }]} numberOfLines={2}>{b.title}</Text>
+              <Text style={[type.caption, { fontSize: 13.5, color: t.ink2 }]} numberOfLines={1}>{[b.author, b.first_published].filter(Boolean).join(' · ')}</Text>
               {b.nearby_likes > 0 && <Text style={s.nearby}>{nearbyText(b.nearby_likes)}</Text>}
             </View>
             <Pressable accessibilityRole="button" accessibilityLabel={b.liked ? `You like ${b.title}` : `Like ${b.title}`}
               accessibilityState={{ selected: b.liked, busy: liking === b.ol_key }} onPress={() => like(b)}
-              style={[s.heart, { borderColor: mode.color }, b.liked && { backgroundColor: mode.color }]}>
-              {liking === b.ol_key ? <ActivityIndicator color={mode.color} />
-                : <Icon name={b.liked ? 'heart' : 'heartOutline'} size={20} color={b.liked ? '#fff' : mode.color} />}
+              style={[s.heart, b.liked && s.hearted]}>
+              {b.liked && <Gradient style={[StyleSheet.absoluteFill, { borderRadius: TOUCH / 2 }]} />}
+              {liking === b.ol_key ? <ActivityIndicator color={t.acc} />
+                : <Icon name="heart" size={20} color={b.liked ? '#FFFFFF' : t.ink3} />}
             </Pressable>
           </View>
         )}
@@ -122,13 +135,16 @@ export default function Search() {
   );
 }
 
-const s = StyleSheet.create({
-  searchBox: { flexDirection: 'row', alignItems: 'center', gap: space(2), margin: space(4), paddingHorizontal: space(3), minHeight: TOUCH, borderRadius: radius.md, borderWidth: 1, borderColor: colors.lineStrong, backgroundColor: colors.card },
-  input: { flex: 1, fontSize: 17, color: colors.ink, paddingVertical: space(2.5) },
-  section: { ...type.overline, color: colors.ink3, paddingHorizontal: space(4), paddingTop: space(4), paddingBottom: space(2), backgroundColor: colors.paper },
-  hint: { color: colors.inkMuted, textAlign: 'center', padding: space(8) },
-  row: { flexDirection: 'row', alignItems: 'center', gap: space(3), paddingHorizontal: space(4), paddingVertical: space(2) },
-  cover: { width: 44, height: 66 },
-  nearby: { fontSize: 13, fontWeight: '700', color: colors.gilt },
-  heart: { width: TOUCH, height: TOUCH, borderRadius: TOUCH / 2, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center' },
+const make = (t: Theme) => StyleSheet.create({
+  top: { flexDirection: 'row', alignItems: 'center', gap: space(2.5), paddingHorizontal: space(4), paddingBottom: space(2) },
+  ring: { flex: 1, borderRadius: 28, borderWidth: 4, borderColor: 'transparent' },
+  searchBox: { flexDirection: 'row', alignItems: 'center', gap: space(2), height: 48, paddingHorizontal: space(4), borderRadius: 24 },
+  input: { flex: 1, fontFamily: fonts.ui, fontSize: 17, color: t.ink, paddingVertical: space(2) },
+  section: { paddingHorizontal: space(5), paddingTop: space(4), paddingBottom: space(2) },
+  hint: { color: t.ink2, textAlign: 'center', padding: space(8) },
+  row: { flexDirection: 'row', alignItems: 'center', gap: space(3.5), paddingHorizontal: space(5), paddingVertical: space(2) },
+  cover: { width: 46, height: 69 },
+  nearby: { fontFamily: fonts.uiBold, fontSize: 13, color: t.gold },
+  heart: { width: TOUCH, height: TOUCH, borderRadius: TOUCH / 2, borderWidth: 1.5, borderColor: t.line, alignItems: 'center', justifyContent: 'center' },
+  hearted: { borderColor: 'transparent', shadowColor: t.acc, shadowOpacity: 0.5, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } },
 });
