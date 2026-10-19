@@ -12,3 +12,19 @@ expo-env.d.ts
 supabase/.temp/
 google-play-service-account.json
 google-services.json
+
+# Secrets & private files — never commit (enforced by scripts/check-secrets.sh)
+.env.*
+!.env.example
+GoogleService-Info.plist
+*firebase-adminsdk*.json
+*service-account*.json
+*.jks
+*.keystore
+*.p8
+*.p12
+*.pem
+*.key
+*.mobileprovision
+*.zip
+design_handoff*/

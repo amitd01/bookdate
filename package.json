@@ -49,6 +49,7 @@
     "typescript": "~6.0.3"
   },
   "scripts": {
+    "prepare": "git config core.hooksPath .githooks || true",
     "start": "expo start",
     "ios": "expo run:ios",
     "typecheck": "tsc --noEmit",
@@ -61,7 +62,8 @@
     "submit:android": "npx eas-cli@latest submit -p android --latest",
     "update:preview": "npx eas-cli@latest update --channel preview --environment preview --message",
     "update:production": "npx eas-cli@latest update --channel production --environment production --message",
-    "release": "bash scripts/release.sh"
+    "release": "bash scripts/release.sh",
+    "check:secrets": "scripts/check-secrets.sh --all"
   },
   "private": true
 }
