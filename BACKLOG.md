@@ -43,19 +43,25 @@ Design handoff from Claude Design: a re-skin with the same flows, copy and data.
 
 | # | Item | Status |
 |---|---|---|
-| 17 | New tokens (`getTheme(scheme, mode)`), theme provider, brand fonts | ✅ PR |
-| 18 | **Dark mode** (`userInterfaceStyle: automatic`, dark splash) | ✅ PR |
-| 19 | Restyle: sign-in collage, tab bars, Discover deck + genre sheet, match moment, Book Dates, chat, search, profile, onboarding/edit, sheets | ✅ PR |
-| 20 | Profile: "Loved lately" covers + live Looking-for switch | ✅ PR |
+| 17 | New tokens (`getTheme(scheme, mode)`), theme provider, brand fonts | ✅ shipped in 1.2.0 (#8) |
+| 18 | **Dark mode** (`userInterfaceStyle: automatic`, dark splash) | ✅ shipped in 1.2.0 (#8) |
+| 19 | Restyle: sign-in collage, tab bars, Discover deck + genre sheet, match moment, Book Dates, chat, search, profile, onboarding/edit, sheets | ✅ shipped in 1.2.0 (#8) |
+| 20 | Profile: "Loved lately" covers + live Looking-for switch | ✅ shipped in 1.2.0 (#8) |
 | 21 | Chat typing indicator (needs a Supabase realtime presence channel per match) | 🔧 |
 | 22 | Search: "Loved by readers near you" list when the query is empty (needs a nearby-popular RPC) | 🔧 |
 | 23 | Real blur on Android (`BlurTargetView` + `dimezisBlurView`); today Android draws solid glass, as the handoff allows | 🔧 |
 | 24 | Discover: dominant-colour glow behind the card (needs a per-book colour; the blurred cover halo covers most of it) | 🔧 |
 | 25 | App icon / Android adaptive icon background still use the old burgundy | ❓ |
+| 26 | Move Supabase auth email off personal Gmail SMTP to Resend (own domain, `no-reply@`), and change the template's support address | 🔧 before production |
+| 27 | Play pre-launch report: add robot test-account credentials so it stops creating junk email sign-ups | 🔧 |
+| 28 | Store reviewer demo account (real mailbox / `+review` alias) for Play "App access" and App Store review notes | 🔧 before production |
 
-## Release status
+## Release status (2026-10-19)
 
-| Platform | Version | Next step |
-|---|---|---|
-| Both | 1.1.0 (this release) | `npx supabase db push` → `npm run build:ios && npm run submit:ios` → `npm run build:android && npm run submit:android` |
-| After 1.1 is installed | — | JS-only fixes ship with `npm run update:production -- "what changed"`; native changes (new modules, permissions, icons) still need a build and a version bump |
+| Platform | Version | State | Next step |
+|---|---|---|---|
+| iOS | 1.2.0 (build 4) | TestFlight, verified on device (Apple + Google sign-in) | Submit for App Store review (`docs/APP_STORE.md`) |
+| Android | 1.2.0 (versionCode 4, FCM push) | Play **internal testing** live | Finish Play listing/policy forms, then promote to production (`docs/PLAY_STORE.md`); `npm run submit:android` now works via the Play service account |
+| Both | — | — | JS-only fixes: `npm run update:production -- "msg"`; native changes need a build + version bump |
+
+See `HANDOVER.md` for the full session handover.
